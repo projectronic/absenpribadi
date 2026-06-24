@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Absen Pribadi</title>
+<style>
+  :root {
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --dark: #0f172a;
+    --slate-400: #94a3b8;
+    --slate-500: #64748b;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --green-bg: #ecfdf5;
+    --green-border: #a7f3d0;
+    --green-text: #047857;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card {
+    width: 100%;
+    height: 100%;
+    max-width: 420px;
+    background: var(--card);
+    box-shadow: none;
+    border: none;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 24px;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .body:has(.riwayat-page) {
+    padding: 0;
+    justify-content: stretch;
+  }
+  .footer-signature {
+    flex-shrink: 0;
+    text-align: center;
+    font-size: 10px;
+    line-height: 1.5;
+    color: var(--slate-400);
+    padding: 8px 0 12px;
+    margin: 0;
+  }
+  .card:has(.riwayat-page) .footer-signature,
+  .card:has(.kalender-page) .footer-signature {
+    display: none;
+  }
+  .header {
+    background: var(--dark);
+    color: white;
+    padding: 18px 14px;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .header.libur {
+    background: #92400e;
+  }
+  .header.libur .label {
+    color: #fde68a;
+  }
+  .header .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--slate-400);
+    margin: 0 0 4px;
+    text-align: center;
+  }
+  .header .clock {
+    font-size: 28px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    margin: 0;
+    text-align: center;
+  }
+  .header .tanggal {
+    font-size: 11px;
+    color: var(--slate-400);
+    margin: 3px 0 0;
+    text-align: center;
+  }
+  .header.libur .tanggal {
+    color: #fde68a;
+  }
+  .header-icon-btn {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.14);
+    border-radius: 10px;
+    font-size: 15px;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+  .header-icon-btn:hover { background: rgba(255,255,255,0.24); }
+  .header-icon-btn svg { display: block; opacity: 0.95; }
+  .libur-badge {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin: 0 0 14px;
+  }
+  button {
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    border: none;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: var(--dark);
+    color: white;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: #1e293b; }
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .box {
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    border: 1px solid var(--slate-200);
+    background: var(--slate-100);
+  }
+  .box.green {
+    background: var(--green-bg);
+    border-color: var(--green-border);
+  }
+  .box .label { font-size: 12px; color: var(--slate-500); margin: 0 0 4px; }
+  .box .val { font-size: 21px; font-weight: 600; margin: 0; font-variant-numeric: tabular-nums; color: var(--dark); }
+  .box.green .val { color: var(--green-text); }
+  .sisa {
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    background: var(--slate-100);
+    margin-bottom: 14px;
+  }
+  .sisa.green { background: var(--green-bg); }
+  .sisa .label { font-size: 12px; color: var(--slate-500); margin: 0 0 4px; }
+  .sisa .val { font-size: 26px; font-weight: 700; margin: 0; font-variant-numeric: tabular-nums; color: var(--dark); }
+  .sisa.green .val { color: var(--green-text); }
+  .note {
+    font-size: 12px;
+    color: var(--slate-400);
+    text-align: center;
+    margin: 0 0 14px;
+  }
+  .btn-reset {
+    background: none;
+    color: var(--slate-500);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px;
+  }
+  .btn-reset:hover { color: var(--dark); }
+  .btn-link {
+    background: none;
+    color: var(--slate-500);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px;
+  }
+  .btn-link:hover { color: var(--dark); }
+  .riwayat-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .riwayat-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--slate-200);
+  }
+  .riwayat-header h2 {
+    font-size: 16px;
+    margin: 0;
+    color: var(--dark);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .kalender-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .kalender-page .riwayat-header {
+    padding: 12px 18px;
+  }
+  .kalender-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+  }
+  .kalender-judul {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--dark);
+    margin: 0;
+  }
+  .btn-nav {
+    width: auto;
+    padding: 2px 10px;
+    background: var(--slate-100);
+    color: var(--dark);
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 7px;
+  }
+  .btn-nav:hover { background: var(--slate-200); }
+  .kalender-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 12px 10px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .kal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+  }
+  .kal-grid-header {
+    margin-bottom: 2px;
+  }
+  .kal-hari-label {
+    text-align: center;
+    font-size: 9px;
+    color: var(--slate-400);
+    font-weight: 600;
+    padding: 2px 0;
+  }
+  .kal-kotak {
+    position: relative;
+    height: 34px;
+    border: none;
+    border-radius: 7px;
+    background: var(--slate-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+  }
+  .kal-kotak:hover { background: var(--slate-200); }
+  .kal-kosong {
+    background: transparent;
+    cursor: default;
+  }
+  .kal-kosong:hover { background: transparent; }
+  .kal-angka {
+    font-size: 11px;
+    color: var(--dark);
+    font-weight: 500;
+  }
+  .kal-libur {
+    background: #fffbeb;
+  }
+  .kal-libur:hover { background: #fef3c7; }
+  .kal-libur .kal-angka {
+    color: #92400e;
+  }
+  .kal-today {
+    background: var(--dark);
+  }
+  .kal-today .kal-angka {
+    color: white;
+    font-weight: 700;
+  }
+  .kal-today.kal-libur {
+    background: #92400e;
+  }
+  .kal-today.kal-libur .kal-angka {
+    color: white;
+  }
+  .kal-dot {
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--green-text);
+  }
+  .kal-today .kal-dot {
+    background: #6ee7b7;
+  }
+  .kalender-legend {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 8px;
+    font-size: 10px;
+    color: var(--slate-500);
+    flex-shrink: 0;
+  }
+  .legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+  }
+  .legend-dot-libur {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+  }
+  .legend-dot-absen {
+    background: var(--green-text);
+  }
+  .setting-intro {
+    font-size: 12px;
+    color: var(--slate-500);
+    margin: 0 0 14px;
+    line-height: 1.5;
+  }
+  .setting-hari {
+    border: 1px solid var(--slate-200);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .setting-hari-libur {
+    background: var(--slate-100);
+  }
+  .setting-hari-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .setting-hari-nama {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--dark);
+  }
+  .setting-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--slate-500);
+  }
+  .setting-toggle input {
+    width: auto;
+    margin: 0;
+    accent-color: var(--dark);
+  }
+  .setting-hari-jam {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .setting-jam-grup label {
+    display: block;
+    font-size: 10px;
+    color: var(--slate-500);
+    margin-bottom: 3px;
+  }
+  .setting-jam-grup input[type="time"] {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--slate-200);
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: inherit;
+    color: var(--dark);
+  }
+  .btn-back {
+    width: auto;
+    padding: 6px 10px;
+    background: var(--slate-100);
+    color: var(--dark);
+    font-size: 13px;
+    border-radius: 8px;
+  }
+  .riwayat-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 20px;
+    min-height: 0;
+  }
+  .riwayat-empty {
+    color: var(--slate-400);
+    font-size: 13px;
+    text-align: center;
+    padding: 40px 0;
+  }
+  .periode-group {
+    margin-bottom: 14px;
+  }
+  .periode-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--slate-100);
+    border: 1px solid var(--slate-200);
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .periode-header:hover { background: var(--slate-200); }
+  .periode-judul {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--dark);
+    margin: 0 0 2px;
+  }
+  .periode-rentang {
+    font-size: 11px;
+    color: var(--slate-500);
+    margin: 0;
+  }
+  .periode-rekap {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+    white-space: nowrap;
+  }
+  .periode-rekap.lebih { color: var(--green-text); }
+  .periode-rekap.kurang { color: #b91c1c; }
+  .periode-rekap.neutral { color: var(--slate-500); }
+  .periode-items {
+    padding-top: 10px;
+  }
+  .riwayat-item {
+    border: 1px solid var(--slate-200);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .riwayat-item .tgl {
+    font-size: 12px;
+    color: var(--slate-500);
+    margin: 0 0 6px;
+  }
+  .riwayat-item .jamrow {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    color: var(--dark);
+    margin-bottom: 8px;
+  }
+  .riwayat-item .jamrow b { font-weight: 600; }
+  .selisih-badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin: 0 0 10px;
+  }
+  .selisih-badge.kurang {
+    background: #fef2f2;
+    color: #b91c1c;
+  }
+  .selisih-badge.lebih {
+    background: var(--green-bg);
+    color: var(--green-text);
+  }
+  .selisih-badge.neutral {
+    background: var(--slate-100);
+    color: var(--slate-500);
+  }
+  .riwayat-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .riwayat-actions button {
+    flex: 1;
+    width: auto;
+    padding: 7px;
+    font-size: 12px;
+    border-radius: 7px;
+  }
+  .btn-edit {
+    background: var(--slate-100);
+    color: var(--dark);
+  }
+  .btn-edit:hover { background: var(--slate-200); }
+  .btn-delete {
+    background: #fef2f2;
+    color: #b91c1c;
+  }
+  .btn-delete:hover { background: #fee2e2; }
+  .edit-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .edit-row input {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid var(--slate-200);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .edit-row button {
+    width: auto;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header" id="header">
+    <button class="header-icon-btn" id="btnIconKalender" title="Kalender">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="22" height="22" fill="currentColor"><path d="M180-80q-24 0-42-18t-18-42v-620q0-24 18-42t42-18h65v-60h65v60h340v-60h65v60h65q24 0 42 18t18 42v620q0 24-18 42t-42 18H180Zm0-60h600v-430H180v430Zm0-490h600v-130H180v130Zm0 0v-130 130Zm300 230q-17 0-28.5-11.5T440-440q0-17 11.5-28.5T480-480q17 0 28.5 11.5T520-440q0 17-11.5 28.5T480-400Zm-188.5-11.5Q280-423 280-440t11.5-28.5Q303-480 320-480t28.5 11.5Q360-457 360-440t-11.5 28.5Q337-400 320-400t-28.5-11.5ZM640-400q-17 0-28.5-11.5T600-440q0-17 11.5-28.5T640-480q17 0 28.5 11.5T680-440q0 17-11.5 28.5T640-400ZM480-240q-17 0-28.5-11.5T440-280q0-17 11.5-28.5T480-320q17 0 28.5 11.5T520-280q0 17-11.5 28.5T480-240Zm-188.5-11.5Q280-263 280-280t11.5-28.5Q303-320 320-320t28.5 11.5Q360-297 360-280t-11.5 28.5Q337-240 320-240t-28.5-11.5ZM640-240q-17 0-28.5-11.5T600-280q0-17 11.5-28.5T640-320q17 0 28.5 11.5T680-280q0 17-11.5 28.5T640-240Z"/></svg>
+    </button>
+    <div>
+      <p class="label">Waktu sekarang</p>
+      <p class="clock" id="clock">--:--:--</p>
+      <p class="tanggal" id="tanggal">-</p>
+    </div>
+    <button class="header-icon-btn" id="btnIconSetting" title="Setting">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="22" height="22" fill="currentColor"><path d="m388-80-20-126q-19-7-40-19t-37-25l-118 54-93-164 108-79q-2-9-2.5-20.5T185-480q0-9 .5-20.5T188-521L80-600l93-164 118 54q16-13 37-25t40-18l20-127h184l20 126q19 7 40.5 18.5T669-710l118-54 93 164-108 77q2 10 2.5 21.5t.5 21.5q0 10-.5 21t-2.5 21l108 78-93 164-118-54q-16 13-36.5 25.5T592-206L572-80H388Zm48-60h88l14-112q33-8 62.5-25t53.5-41l106 46 40-72-94-69q4-17 6.5-33.5T715-480q0-17-2-33.5t-7-33.5l94-69-40-72-106 46q-23-26-52-43.5T538-708l-14-112h-88l-14 112q-34 7-63.5 24T306-642l-106-46-40 72 94 69q-4 17-6.5 33.5T245-480q0 17 2.5 33.5T254-413l-94 69 40 72 106-46q24 24 53.5 41t62.5 25l14 112Zm44-210q54 0 92-38t38-92q0-54-38-92t-92-38q-54 0-92 38t-38 92q0 54 38 92t92 38Zm0-130Z"/></svg>
+    </button>
+  </div>
+  <div class="body" id="body">
+    <!-- konten diisi oleh JS -->
+  </div>
+  <p class="footer-signature">Semangat kerjanya.<br>with ❤️ Vicky Andhika</p>
+</div>
+
+<script>
+  const KEY = "absen_masuk_timestamp";
+  const RIWAYAT_KEY = "absen_riwayat";
+
+  let halaman = "utama"; // "utama" | "riwayat" | "kalender" | "detailTanggal" | "setting"
+  let editingId = null;
+  let periodeTertutup = new Set(); // key periode yang di-collapse user
+  let bulanKalender = new Date(); // bulan yang sedang ditampilkan di tab kalender
+  let tanggalDipilih = null; // Date object, tanggal yang diklik dari kalender
+
+  // ===== Jadwal Kerja (bisa disesuaikan lewat halaman Setting) =====
+  const HARI_LIST = ["senin", "selasa", "rabu", "kamis", "jumat", "sabtu", "minggu"];
+  const HARI_LABEL = { senin: "Senin", selasa: "Selasa", rabu: "Rabu", kamis: "Kamis", jumat: "Jumat", sabtu: "Sabtu", minggu: "Minggu" };
+  const JADWAL_KEY = "absen_jadwal_kerja";
+
+  // Default: Senin-Kamis kerja standar, Jumat ada istirahat panjang, Sabtu-Minggu libur.
+  // Ini cuma DEFAULT bawaan — sesuaikan lewat halaman Setting di aplikasi, tidak perlu edit kode.
+  const JADWAL_DEFAULT = {
+    senin:   { libur: false, masuk: "09:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "18:00" },
+    selasa:  { libur: false, masuk: "09:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "18:00" },
+    rabu:    { libur: false, masuk: "09:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "18:00" },
+    kamis:   { libur: false, masuk: "09:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "18:00" },
+    jumat:   { libur: false, masuk: "08:00", istirahatMulai: "11:00", istirahatSelesai: "13:30", pulang: "17:00" },
+    sabtu:   { libur: true,  masuk: "09:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "18:00" },
+    minggu:  { libur: true,  masuk: "09:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "18:00" },
+  };
+
+  let jadwalKerja = { ...JADWAL_DEFAULT };
+
+  function getJadwalKerja() {
+    try {
+      const v = localStorage.getItem(JADWAL_KEY);
+      if (!v) return { ...JADWAL_DEFAULT };
+      const parsed = JSON.parse(v);
+      // Gabungkan dengan default supaya field yang belum ada (versi lama) tetap terisi.
+      const hasil = {};
+      HARI_LIST.forEach(h => { hasil[h] = { ...JADWAL_DEFAULT[h], ...(parsed[h] || {}) }; });
+      return hasil;
+    } catch {
+      return { ...JADWAL_DEFAULT };
+    }
+  }
+  function setJadwalKerja(jadwal) {
+    localStorage.setItem(JADWAL_KEY, JSON.stringify(jadwal));
+    jadwalKerja = jadwal;
+  }
+  function getNamaHari(d) {
+    // getDay(): 0=Minggu...6=Sabtu -> mapping ke HARI_LIST (index 0=Senin)
+    const idx = (d.getDay() + 6) % 7;
+    return HARI_LIST[idx];
+  }
+  function getJadwalHari(d) {
+    return jadwalKerja[getNamaHari(d)];
+  }
+  function jamStrKeMenit(jamStr) {
+    const [h, m] = jamStr.split(":").map(Number);
+    return h * 60 + m;
+  }
+  // Target durasi PRESENSI (ms) untuk satu hari: total waktu dari jam masuk sampai jam
+  // pulang sesuai jadwal, TERMASUK jam istirahat. Ini dipakai untuk dibandingkan dengan
+  // durasi aktual (yang juga dihitung dari masuk-ke-pulang, tanpa potongan istirahat),
+  // supaya perbandingan kurang/lebih jadi adil/sebanding (apple-to-apple).
+  // Menangani shift malam: jika jam pulang <= jam masuk, dianggap pulang di hari berikutnya
+  // (tambah 24 jam) alih-alih menghasilkan durasi negatif/nol.
+  function totalJamJadwal(jadwal) {
+    let totalMenit = jamStrKeMenit(jadwal.pulang) - jamStrKeMenit(jadwal.masuk);
+    if (totalMenit <= 0) totalMenit += 24 * 60;
+    return totalMenit * 60 * 1000;
+  }
+  // Jam pulang TARGET pada tanggal d, sesuai jadwal hari itu (bukan dihitung dari jam masuk aktual).
+  // Jika jam pulang lebih kecil dari jam masuk (mis. shift malam 22:00-06:00), otomatis
+  // dianggap jatuh di hari berikutnya.
+  function jamPulangTarget(d, jadwal) {
+    const [h, m] = jadwal.pulang.split(":").map(Number);
+    let hasil = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m, 0, 0);
+    if (jamStrKeMenit(jadwal.pulang) <= jamStrKeMenit(jadwal.masuk)) {
+      hasil.setDate(hasil.getDate() + 1);
+    }
+    return hasil;
+  }
+  function fmtJadwalSingkat(jadwal) {
+    if (jadwal.libur) return "Libur";
+    return `${jadwal.masuk}\u2013${jadwal.pulang} (istirahat ${jadwal.istirahatMulai}\u2013${jadwal.istirahatSelesai})`;
+  }
+
+  // ===== Kalender Libur Nasional =====
+  // Data resmi berdasarkan SKB 3 Menteri (Menpan-RB, Menaker, Menag) — sumber: forpublic.id
+  // CATATAN UPDATE TAHUNAN: SKB untuk tahun berikutnya biasanya diumumkan
+  // sekitar September tahun sebelumnya. Setiap akhir tahun, tambahkan data
+  // tahun baru ke LIBUR_HARDCODE di bawah ini dengan format yang sama.
+  // Sumber rujukan: https://holiday.forpublic.id/en/{tahun}/holidays
+  const LIBUR_HARDCODE = {
+    "2026-01-01": "Tahun Baru Masehi",
+    "2026-01-16": "Isra Mi'raj Nabi Muhammad SAW",
+    "2026-02-16": "Cuti Bersama Imlek",
+    "2026-02-17": "Tahun Baru Imlek 2577",
+    "2026-03-18": "Cuti Bersama Nyepi",
+    "2026-03-19": "Hari Suci Nyepi (Tahun Baru Saka)",
+    "2026-03-20": "Cuti Bersama Idul Fitri",
+    "2026-03-21": "Idul Fitri 1447 H",
+    "2026-03-22": "Idul Fitri 1447 H",
+    "2026-03-23": "Cuti Bersama Idul Fitri",
+    "2026-03-24": "Cuti Bersama Idul Fitri",
+    "2026-04-03": "Wafat Yesus Kristus (Jumat Agung)",
+    "2026-04-05": "Kebangkitan Yesus Kristus (Paskah)",
+    "2026-05-01": "Hari Buruh Internasional",
+    "2026-05-14": "Kenaikan Yesus Kristus",
+    "2026-05-15": "Cuti Bersama Kenaikan Yesus Kristus",
+    "2026-05-27": "Idul Adha 1447 H",
+    "2026-05-28": "Cuti Bersama Idul Adha",
+    "2026-05-31": "Hari Raya Waisak 2570 BE",
+    "2026-06-01": "Hari Lahir Pancasila",
+    "2026-06-16": "Tahun Baru Islam 1448 H",
+    "2026-08-17": "Hari Kemerdekaan RI",
+    "2026-08-25": "Maulid Nabi Muhammad SAW",
+    "2026-12-24": "Cuti Bersama Natal",
+    "2026-12-25": "Hari Raya Natal",
+  };
+
+  const LIBUR_KEY = "absen_libur_cache";
+  const LIBUR_REFRESH_MS = 7 * 24 * 3600 * 1000; // coba refresh tiap 7 hari (opsional, lihat di bawah)
+  let liburMap = { ...LIBUR_HARDCODE }; // mulai dari data hardcode, bisa ditimpa cache fetch jika ada & lebih baru
+
+  function getLiburCache() {
+    try {
+      const v = localStorage.getItem(LIBUR_KEY);
+      return v ? JSON.parse(v) : null;
+    } catch {
+      return null;
+    }
+  }
+  function setLiburCache(data) {
+    localStorage.setItem(LIBUR_KEY, JSON.stringify(data));
+  }
+  function bangunLiburMap(tahunTahunData) {
+    const map = { ...LIBUR_HARDCODE }; // hardcode tetap jadi basis, fetch hanya menambah/menimpa
+    Object.values(tahunTahunData).forEach(list => {
+      (list || []).forEach(item => {
+        map[item.date] = item.localName || item.name || "Hari Libur";
+      });
+    });
+    return map;
+  }
+  async function fetchLiburTahun(tahun) {
+    const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${tahun}/ID`);
+    if (!res.ok) throw new Error("Gagal fetch libur " + tahun);
+    return await res.json();
+  }
+  // Percobaan fetch online ini OPSIONAL — berguna jika file suatu saat dibuka
+  // lewat http/https (bukan file:// lokal) sehingga tidak terblokir CORS.
+  // Jika gagal (termasuk karena CORS saat dibuka sebagai file lokal seperti
+  // biasanya), aplikasi diam-diam tetap memakai LIBUR_HARDCODE di atas —
+  // tidak pernah mengganggu fungsi inti absen.
+  async function refreshLiburJikaPerlu() {
+    const cache = getLiburCache();
+    const sekarang = Date.now();
+    if (cache && (sekarang - cache.terakhirFetch) < LIBUR_REFRESH_MS) {
+      liburMap = bangunLiburMap(cache.data);
+      return;
+    }
+    if (cache) liburMap = bangunLiburMap(cache.data);
+    try {
+      const tahunIni = new Date().getFullYear();
+      const [dataIni, dataDepan] = await Promise.all([
+        fetchLiburTahun(tahunIni),
+        fetchLiburTahun(tahunIni + 1),
+      ]);
+      const dataBaru = { [tahunIni]: dataIni, [tahunIni + 1]: dataDepan };
+      setLiburCache({ terakhirFetch: sekarang, data: dataBaru });
+      liburMap = bangunLiburMap(dataBaru);
+      render();
+    } catch (e) {
+      // Gagal fetch (CORS/offline/dll) — tetap pakai LIBUR_HARDCODE, tidak masalah.
+      console.warn("Fetch online tidak tersedia, memakai data libur bawaan:", e.message);
+    }
+  }
+  function tanggalKey(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+  function infoHari(d) {
+    const namaLibur = liburMap[tanggalKey(d)];
+    if (namaLibur) return { libur: true, label: namaLibur };
+    const jadwal = getJadwalHari(d);
+    if (jadwal.libur) return { libur: true, label: `Hari ${HARI_LABEL[getNamaHari(d)]}` };
+    return { libur: false, label: null };
+  }
+
+  function fmtJam(d) {
+    return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  }
+  function fmtTanggalHeader(d) {
+    return d.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  }
+  function fmtJamSingkat(d, bedaHari) {
+    const jam = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+    return bedaHari > 0 ? `${jam} (+${bedaHari}h)` : jam;
+  }
+  function fmtSisa(ms) {
+    if (ms <= 0) return "Sudah boleh pulang";
+    const totalDetik = Math.floor(ms / 1000);
+    const j = Math.floor(totalDetik / 3600);
+    const m = Math.floor((totalDetik % 3600) / 60);
+    const s = totalDetik % 60;
+    return [j, m, s].map(n => String(n).padStart(2, "0")).join(":");
+  }
+
+  function getAbsenMasuk() {
+    const v = localStorage.getItem(KEY);
+    return v ? new Date(parseInt(v, 10)) : null;
+  }
+  function setAbsenMasuk(d) {
+    localStorage.setItem(KEY, d.getTime().toString());
+  }
+  function clearAbsenMasuk() {
+    localStorage.removeItem(KEY);
+  }
+
+  function fmtTanggal(d) {
+    return d.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  }
+  // Target durasi kerja (ms) untuk sebuah entri riwayat, berdasarkan hari jam masuknya.
+  // Mengembalikan null jika hari itu disetting libur (artinya tidak ada target untuk dibandingkan).
+  function targetUntukEntri(item) {
+    const d = new Date(item.masuk);
+    const jadwal = getJadwalHari(d);
+    if (jadwal.libur) return null;
+    return totalJamJadwal(jadwal);
+  }
+  function fmtDurasi(ms) {
+    const totalMenit = Math.round(ms / 60000);
+    const j = Math.floor(totalMenit / 60);
+    const m = totalMenit % 60;
+    return `${j} jam ${m} menit`;
+  }
+  function fmtSelisih(durasiMs, targetMs) {
+    // targetMs null/undefined berarti hari libur — tidak ada target, jadi tidak menghitung kurang/lebih.
+    if (targetMs == null) return { teks: "Tidak ada target (hari libur)", kelas: "neutral" };
+    const selisihMs = durasiMs - targetMs;
+    const absMenit = Math.round(Math.abs(selisihMs) / 60000);
+    const j = Math.floor(absMenit / 60);
+    const m = absMenit % 60;
+    const teks = `${j} jam ${m} menit`;
+    if (Math.abs(selisihMs) < 60000) return { teks: "Pas, sesuai target", kelas: "neutral" };
+    if (selisihMs > 0) return { teks: `Lebih ${teks}`, kelas: "lebih" };
+    return { teks: `Kurang ${teks}`, kelas: "kurang" };
+  }
+  function fmtSelisihTotal(selisihMs) {
+    const absMenit = Math.round(Math.abs(selisihMs) / 60000);
+    const j = Math.floor(absMenit / 60);
+    const m = absMenit % 60;
+    const teks = `${j}j ${m}m`;
+    if (Math.abs(selisihMs) < 60000) return { teks: "Pas", kelas: "neutral" };
+    if (selisihMs > 0) return { teks: `+${teks}`, kelas: "lebih" };
+    return { teks: `-${teks}`, kelas: "kurang" };
+  }
+
+  const CUTOFF_TANGGAL = 25;
+
+  // Periode kerja: tgl 26 bulan-N s.d. tgl 25 bulan-(N+1).
+  // Diberi nama berdasarkan bulan akhir periode (tempat cut-off-nya jatuh).
+  function getPeriodeKey(d) {
+    const tahun = d.getFullYear();
+    const bulan = d.getMonth(); // 0-11
+    if (d.getDate() > CUTOFF_TANGGAL) {
+      // Masuk periode bulan berikutnya
+      const next = new Date(tahun, bulan + 1, 1);
+      return `${next.getFullYear()}-${next.getMonth()}`;
+    }
+    return `${tahun}-${bulan}`;
+  }
+  function getPeriodeLabel(key) {
+    const [tahun, bulan] = key.split("-").map(Number);
+    const namaBulan = new Date(tahun, bulan, 1).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+    const awal = new Date(tahun, bulan - 1, CUTOFF_TANGGAL + 1);
+    const akhir = new Date(tahun, bulan, CUTOFF_TANGGAL);
+    const fmtSingkat = (d) => d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+    return { judul: `Periode ${namaBulan}`, rentang: `${fmtSingkat(awal)} – ${fmtSingkat(akhir)}` };
+  }
+
+  function getRiwayat() {
+    try {
+      const v = localStorage.getItem(RIWAYAT_KEY);
+      return v ? JSON.parse(v) : [];
+    } catch {
+      return [];
+    }
+  }
+  function setRiwayat(arr) {
+    localStorage.setItem(RIWAYAT_KEY, JSON.stringify(arr));
+  }
+  // Cari entri riwayat yang jam masuknya jatuh pada tanggal kalender tertentu.
+  // Bisa lebih dari satu entri jika user reset & absen ulang di hari yang sama.
+  function getRiwayatPadaTanggal(d) {
+    const key = tanggalKey(d);
+    return getRiwayat().filter(item => tanggalKey(new Date(item.masuk)) === key);
+  }
+  function tambahRiwayat(masuk, pulang, aktual) {
+    const arr = getRiwayat();
+    arr.unshift({
+      id: Date.now().toString(),
+      masuk: masuk.getTime(),
+      pulang: pulang.getTime(),
+      aktual: !!aktual, // true = absen pulang manual, false = auto/lupa
+    });
+    setRiwayat(arr);
+  }
+  function hapusRiwayat(id) {
+    setRiwayat(getRiwayat().filter(r => r.id !== id));
+  }
+  // Catatan: saat menyimpan form edit, panggil updateRiwayatJamMasuk()
+  // SEBELUM updateRiwayatJamPulang() — jam pulang baru akan menimpa nilai
+  // sementara yang dihitung dari durasi lama.
+  function updateRiwayatJamMasuk(id, jamStr) {
+    const arr = getRiwayat();
+    const item = arr.find(r => r.id === id);
+    if (!item) return;
+    const [h, m] = jamStr.split(":").map(Number);
+    if (isNaN(h) || isNaN(m)) return;
+    const durasiLama = item.pulang - item.masuk;
+    const d = new Date(item.masuk);
+    d.setHours(h, m, 0, 0);
+    item.masuk = d.getTime();
+    // Pertahankan durasi yang sudah tercatat (baik aktual maupun target),
+    // hanya jam masuknya yang bergeser.
+    item.pulang = d.getTime() + durasiLama;
+    setRiwayat(arr);
+  }
+  function updateRiwayatJamPulang(id, jamStr) {
+    const arr = getRiwayat();
+    const item = arr.find(r => r.id === id);
+    if (!item) return;
+    const [h, m] = jamStr.split(":").map(Number);
+    if (isNaN(h) || isNaN(m)) return;
+    const d = new Date(item.pulang);
+    d.setHours(h, m, 0, 0);
+    if (d.getTime() < item.masuk) d.setDate(d.getDate() + 1);
+    item.pulang = d.getTime();
+    item.aktual = true;
+    setRiwayat(arr);
+  }
+
+  function render() {
+    const now = new Date();
+    document.getElementById("clock").textContent = fmtJam(now);
+    document.getElementById("tanggal").textContent = fmtTanggalHeader(now);
+
+    const headerEl = document.getElementById("header");
+    if (infoHari(now).libur) headerEl.classList.add("libur");
+    else headerEl.classList.remove("libur");
+
+    const body = document.getElementById("body");
+
+    if (halaman === "riwayat") {
+      renderRiwayat(body);
+      return;
+    }
+    if (halaman === "kalender") {
+      renderKalender(body);
+      return;
+    }
+    if (halaman === "detailTanggal") {
+      renderDetailTanggal(body);
+      return;
+    }
+    if (halaman === "setting") {
+      renderSetting(body);
+      return;
+    }
+
+    const absenMasuk = getAbsenMasuk();
+    const infoHariIni = infoHari(now);
+    const badgeLibur = infoHariIni.libur
+      ? `<p class="libur-badge">📅 ${infoHariIni.label}</p>`
+      : "";
+
+    if (!absenMasuk) {
+      body.innerHTML = `
+        ${badgeLibur}
+        <button class="btn-primary" id="btnAbsen">Absen Masuk</button>
+        <button class="btn-link" id="btnLihatRiwayat" style="margin-top:10px;">Lihat Riwayat</button>
+      `;
+      document.getElementById("btnAbsen").onclick = () => {
+        setAbsenMasuk(new Date());
+        render();
+      };
+      document.getElementById("btnLihatRiwayat").onclick = () => {
+        halaman = "riwayat";
+        render();
+      };
+      return;
+    }
+
+    const jadwalHariIni = getJadwalHari(absenMasuk);
+    const adaTarget = !jadwalHariIni.libur;
+    const jamPulang = adaTarget ? jamPulangTarget(absenMasuk, jadwalHariIni) : null;
+    const sudahBoleh = adaTarget ? now >= jamPulang : false;
+    const sisaMs = adaTarget ? jamPulang.getTime() - now.getTime() : null;
+    const durasiBerjalanMs = now.getTime() - absenMasuk.getTime();
+
+    let bedaHari = 0;
+    let kotakPulangHtml;
+    let sisaLabelHtml;
+    if (adaTarget) {
+      const tglMasuk = new Date(absenMasuk.getFullYear(), absenMasuk.getMonth(), absenMasuk.getDate());
+      const tglPulang = new Date(jamPulang.getFullYear(), jamPulang.getMonth(), jamPulang.getDate());
+      bedaHari = Math.round((tglPulang - tglMasuk) / (24 * 3600 * 1000));
+      kotakPulangHtml = `
+        <div class="box ${sudahBoleh ? "green" : ""}">
+          <p class="label">Jam Pulang</p>
+          <p class="val">${fmtJamSingkat(jamPulang, bedaHari)}</p>
+        </div>`;
+      sisaLabelHtml = `
+        <div class="sisa ${sudahBoleh ? "green" : ""}">
+          <p class="label">${sudahBoleh ? "Status" : "Sisa waktu"}</p>
+          <p class="val">${fmtSisa(sisaMs)}</p>
+        </div>`;
+    } else {
+      // Hari libur: tidak ada jadwal/target, jadi tidak ada jam pulang otomatis ataupun countdown.
+      kotakPulangHtml = `
+        <div class="box">
+          <p class="label">Jam Pulang</p>
+          <p class="val">&ndash;</p>
+        </div>`;
+      sisaLabelHtml = `
+        <div class="sisa">
+          <p class="label">Sudah berjalan</p>
+          <p class="val">${fmtDurasi(durasiBerjalanMs)}</p>
+        </div>`;
+    }
+
+    const noteHtml = adaTarget
+      ? `<p class="note">Jadwal hari ini: ${fmtJadwalSingkat(jadwalHariIni)}</p>`
+      : `<p class="note">Hari ini tidak ada jadwal kerja (libur) &mdash; absen tetap tercatat tanpa target jam pulang.</p>`;
+
+    body.innerHTML = `
+      ${badgeLibur}
+      <div class="grid2">
+        <div class="box">
+          <p class="label">Jam Masuk</p>
+          <p class="val">${fmtJamSingkat(absenMasuk, 0)}</p>
+        </div>
+        ${kotakPulangHtml}
+      </div>
+      ${sisaLabelHtml}
+      ${noteHtml}
+      <button class="btn-primary" id="btnAbsenPulang">Absen Pulang</button>
+      <div style="display:flex; justify-content:center; gap:16px; margin-top:8px;">
+        <button class="btn-link" id="btnLihatRiwayat" style="width:auto;">Lihat Riwayat</button>
+        <button class="btn-link" id="btnReset" style="width:auto;">Lupa absen pulang?</button>
+      </div>
+    `;
+    document.getElementById("btnAbsenPulang").onclick = () => {
+      tambahRiwayat(absenMasuk, new Date(), true);
+      clearAbsenMasuk();
+      render();
+    };
+    document.getElementById("btnReset").onclick = () => {
+      // Kalau ada target terjadwal, "lupa absen pulang" mencatat jam pulang sesuai target.
+      // Kalau hari libur (tidak ada target), pakai waktu sekarang sebagai jam pulang.
+      tambahRiwayat(absenMasuk, adaTarget ? jamPulang : new Date(), adaTarget ? false : true);
+      clearAbsenMasuk();
+      render();
+    };
+    document.getElementById("btnLihatRiwayat").onclick = () => {
+      halaman = "riwayat";
+      render();
+    };
+  }
+
+  function renderRiwayat(body) {
+    const arr = getRiwayat();
+
+    function renderItem(item) {
+      const masuk = new Date(item.masuk);
+      const pulang = new Date(item.pulang);
+      const durasi = item.pulang - item.masuk;
+      const isEditing = editingId === item.id;
+      const sel = fmtSelisih(durasi, targetUntukEntri(item));
+      return `
+        <div class="riwayat-item">
+          <p class="tgl">${fmtTanggal(masuk)}${item.aktual ? "" : " · otomatis"}</p>
+          <div class="jamrow">
+            <span>Masuk: <b>${fmtJamSingkat(masuk, 0)}</b></span>
+            <span>Pulang: <b>${fmtJamSingkat(pulang, 0)}</b></span>
+          </div>
+          <div class="jamrow" style="color:var(--slate-500); font-size:12px;">
+            <span>Durasi: ${fmtDurasi(durasi)}</span>
+          </div>
+          <p class="selisih-badge ${sel.kelas}">${sel.teks}</p>
+          ${isEditing ? `
+            <div class="edit-row">
+              <div style="flex:1;">
+                <label style="font-size:11px; color:var(--slate-500); display:block; margin-bottom:3px;">Jam masuk</label>
+                <input type="time" id="editMasuk-${item.id}" value="${masuk.toTimeString().slice(0,5)}">
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:11px; color:var(--slate-500); display:block; margin-bottom:3px;">Jam pulang</label>
+                <input type="time" id="editPulang-${item.id}" value="${pulang.toTimeString().slice(0,5)}">
+              </div>
+            </div>
+            <div class="riwayat-actions" style="margin-top:8px;">
+              <button class="btn-edit" data-save="${item.id}">Simpan</button>
+              <button class="btn-link" data-cancel="${item.id}" style="padding:7px;">Batal</button>
+            </div>
+          ` : `
+            <div class="riwayat-actions">
+              <button class="btn-edit" data-edit="${item.id}">Edit</button>
+              <button class="btn-delete" data-delete="${item.id}">Hapus</button>
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    let listHtml;
+    if (arr.length === 0) {
+      listHtml = `<p class="riwayat-empty">Belum ada riwayat absen.</p>`;
+    } else {
+      // Kelompokkan per periode kerja (cut-off tgl 25)
+      const grup = new Map(); // key -> array item
+      arr.forEach(item => {
+        const key = getPeriodeKey(new Date(item.masuk));
+        if (!grup.has(key)) grup.set(key, []);
+        grup.get(key).push(item);
+      });
+      // Urutkan periode terbaru di atas
+      const keysSorted = Array.from(grup.keys()).sort((a, b) => {
+        const [ta, ba] = a.split("-").map(Number);
+        const [tb, bb] = b.split("-").map(Number);
+        return tb - ta || bb - ba;
+      });
+
+      listHtml = keysSorted.map(key => {
+        const items = grup.get(key);
+        const label = getPeriodeLabel(key);
+        // Hanya hari dengan jadwal kerja (bukan libur) yang dihitung ke total target/selisih.
+        let totalDurasi = 0;
+        let totalTarget = 0;
+        let jumlahHariDihitung = 0;
+        items.forEach(item => {
+          const target = targetUntukEntri(item);
+          if (target == null) return; // hari libur, lewati dari kalkulasi rekap
+          totalDurasi += (item.pulang - item.masuk);
+          totalTarget += target;
+          jumlahHariDihitung++;
+        });
+        const rekap = jumlahHariDihitung > 0
+          ? fmtSelisihTotal(totalDurasi - totalTarget)
+          : { teks: "\u2013", kelas: "neutral" };
+        const tertutup = periodeTertutup.has(key);
+
+        return `
+          <div class="periode-group">
+            <button class="periode-header" data-toggle="${key}">
+              <div style="text-align:left;">
+                <p class="periode-judul">${label.judul} ${tertutup ? "▸" : "▾"}</p>
+                <p class="periode-rentang">${label.rentang} · ${items.length} hari</p>
+              </div>
+              <p class="periode-rekap ${rekap.kelas}">${rekap.teks}</p>
+            </button>
+            ${tertutup ? "" : `<div class="periode-items">${items.map(renderItem).join("")}</div>`}
+          </div>
+        `;
+      }).join("");
+    }
+
+    body.innerHTML = `
+      <div class="riwayat-page">
+        <div class="riwayat-header">
+          <button class="btn-back" id="btnBack">&larr; Kembali</button>
+          <h2>Riwayat Absen</h2>
+        </div>
+        <div class="riwayat-list">${listHtml}</div>
+      </div>
+    `;
+
+    document.getElementById("btnBack").onclick = () => {
+      halaman = "utama";
+      editingId = null;
+      render();
+    };
+    body.querySelectorAll("[data-toggle]").forEach(btn => {
+      btn.onclick = () => {
+        const key = btn.getAttribute("data-toggle");
+        if (periodeTertutup.has(key)) periodeTertutup.delete(key);
+        else periodeTertutup.add(key);
+        render();
+      };
+    });
+    body.querySelectorAll("[data-edit]").forEach(btn => {
+      btn.onclick = () => {
+        editingId = btn.getAttribute("data-edit");
+        render();
+      };
+    });
+    body.querySelectorAll("[data-cancel]").forEach(btn => {
+      btn.onclick = () => {
+        editingId = null;
+        render();
+      };
+    });
+    body.querySelectorAll("[data-save]").forEach(btn => {
+      btn.onclick = () => {
+        const id = btn.getAttribute("data-save");
+        const jamMasuk = document.getElementById(`editMasuk-${id}`).value;
+        const jamPulangBaru = document.getElementById(`editPulang-${id}`).value;
+        updateRiwayatJamMasuk(id, jamMasuk);
+        updateRiwayatJamPulang(id, jamPulangBaru);
+        editingId = null;
+        render();
+      };
+    });
+    body.querySelectorAll("[data-delete]").forEach(btn => {
+      btn.onclick = () => {
+        hapusRiwayat(btn.getAttribute("data-delete"));
+        render();
+      };
+    });
+  }
+
+  function renderKalender(body) {
+    const tahun = bulanKalender.getFullYear();
+    const bulan = bulanKalender.getMonth();
+    const namaBulanTahun = bulanKalender.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+
+    const hariPertama = new Date(tahun, bulan, 1);
+    const jumlahHari = new Date(tahun, bulan + 1, 0).getDate();
+    // getDay(): 0=Minggu...6=Sabtu. Kalender dimulai dari Senin, jadi konversi indeksnya.
+    const offsetSenin = (hariPertama.getDay() + 6) % 7;
+
+    const today = new Date();
+    const todayKey = tanggalKey(today);
+
+    const namaHariSingkat = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+
+    let selSel = `<div class="kal-grid kal-grid-header">${namaHariSingkat.map(h => `<div class="kal-hari-label">${h}</div>`).join("")}</div>`;
+
+    let kotak = [];
+    for (let i = 0; i < offsetSenin; i++) {
+      kotak.push(`<div class="kal-kotak kal-kosong"></div>`);
+    }
+    for (let tgl = 1; tgl <= jumlahHari; tgl++) {
+      const d = new Date(tahun, bulan, tgl);
+      const key = tanggalKey(d);
+      const info = infoHari(d);
+      const adaAbsen = getRiwayatPadaTanggal(d).length > 0;
+      const isToday = key === todayKey;
+      const kelas = [
+        "kal-kotak",
+        info.libur ? "kal-libur" : "",
+        isToday ? "kal-today" : "",
+      ].filter(Boolean).join(" ");
+      kotak.push(`
+        <button class="${kelas}" data-tanggal="${key}">
+          <span class="kal-angka">${tgl}</span>
+          ${adaAbsen ? `<span class="kal-dot"></span>` : ""}
+        </button>
+      `);
+    }
+
+    body.innerHTML = `
+      <div class="kalender-page">
+        <div class="riwayat-header">
+          <button class="btn-back" id="btnBack">&larr; Kembali</button>
+          <h2>Kalender</h2>
+        </div>
+        <div class="kalender-nav">
+          <button class="btn-nav" id="btnBulanSebelum">&lsaquo;</button>
+          <p class="kalender-judul">${namaBulanTahun}</p>
+          <button class="btn-nav" id="btnBulanBerikut">&rsaquo;</button>
+        </div>
+        <div class="kalender-body">
+          ${selSel}
+          <div class="kal-grid">${kotak.join("")}</div>
+          <div class="kalender-legend">
+            <span><i class="legend-dot legend-dot-libur"></i> Hari libur</span>
+            <span><i class="legend-dot legend-dot-absen"></i> Ada absen</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById("btnBack").onclick = () => {
+      halaman = "utama";
+      render();
+    };
+    document.getElementById("btnBulanSebelum").onclick = () => {
+      bulanKalender = new Date(tahun, bulan - 1, 1);
+      render();
+    };
+    document.getElementById("btnBulanBerikut").onclick = () => {
+      bulanKalender = new Date(tahun, bulan + 1, 1);
+      render();
+    };
+    body.querySelectorAll("[data-tanggal]").forEach(btn => {
+      btn.onclick = () => {
+        const [y, m, d] = btn.getAttribute("data-tanggal").split("-").map(Number);
+        tanggalDipilih = new Date(y, m - 1, d);
+        halaman = "detailTanggal";
+        render();
+      };
+    });
+  }
+
+  function renderDetailTanggal(body) {
+    const d = tanggalDipilih;
+    const info = infoHari(d);
+    const entriHari = getRiwayatPadaTanggal(d);
+
+    const badgeLiburHtml = info.libur ? `<p class="libur-badge">📅 ${info.label}</p>` : "";
+
+    let entriHtml;
+    if (entriHari.length === 0) {
+      entriHtml = `<p class="riwayat-empty">Tidak ada catatan absen pada tanggal ini.</p>`;
+    } else {
+      entriHtml = entriHari.map(item => {
+        const masuk = new Date(item.masuk);
+        const pulang = new Date(item.pulang);
+        const durasi = item.pulang - item.masuk;
+        const sel = fmtSelisih(durasi, targetUntukEntri(item));
+        return `
+          <div class="riwayat-item">
+            <div class="jamrow">
+              <span>Masuk: <b>${fmtJamSingkat(masuk, 0)}</b></span>
+              <span>Pulang: <b>${fmtJamSingkat(pulang, 0)}</b></span>
+            </div>
+            <div class="jamrow" style="color:var(--slate-500); font-size:12px;">
+              <span>Durasi: ${fmtDurasi(durasi)}</span>
+            </div>
+            <p class="selisih-badge ${sel.kelas}">${sel.teks}</p>
+          </div>
+        `;
+      }).join("");
+    }
+
+    body.innerHTML = `
+      <div class="riwayat-page">
+        <div class="riwayat-header">
+          <button class="btn-back" id="btnBackDetail">&larr; Kalender</button>
+          <h2>${fmtTanggal(d)}</h2>
+        </div>
+        <div class="riwayat-list">
+          ${badgeLiburHtml}
+          ${entriHtml}
+        </div>
+      </div>
+    `;
+
+    document.getElementById("btnBackDetail").onclick = () => {
+      halaman = "kalender";
+      render();
+    };
+  }
+
+  function renderSetting(body) {
+    // Bekerja di atas salinan sementara dulu — baru disimpan permanen saat tombol Simpan ditekan.
+    if (!window._settingDraft) window._settingDraft = JSON.parse(JSON.stringify(jadwalKerja));
+    const draft = window._settingDraft;
+
+    const barisHtml = HARI_LIST.map(hari => {
+      const j = draft[hari];
+      return `
+        <div class="setting-hari ${j.libur ? "setting-hari-libur" : ""}" data-hari="${hari}">
+          <div class="setting-hari-top">
+            <span class="setting-hari-nama">${HARI_LABEL[hari]}</span>
+            <label class="setting-toggle">
+              <input type="checkbox" data-field="libur" data-hari="${hari}" ${j.libur ? "checked" : ""}>
+              <span class="setting-toggle-label">Libur</span>
+            </label>
+          </div>
+          <div class="setting-hari-jam" ${j.libur ? `style="display:none;"` : ""}>
+            <div class="setting-jam-grup">
+              <label>Masuk</label>
+              <input type="time" data-field="masuk" data-hari="${hari}" value="${j.masuk}">
+            </div>
+            <div class="setting-jam-grup">
+              <label>Istirahat</label>
+              <input type="time" data-field="istirahatMulai" data-hari="${hari}" value="${j.istirahatMulai}">
+            </div>
+            <div class="setting-jam-grup">
+              <label>Masuk Lagi</label>
+              <input type="time" data-field="istirahatSelesai" data-hari="${hari}" value="${j.istirahatSelesai}">
+            </div>
+            <div class="setting-jam-grup">
+              <label>Pulang</label>
+              <input type="time" data-field="pulang" data-hari="${hari}" value="${j.pulang}">
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    body.innerHTML = `
+      <div class="riwayat-page">
+        <div class="riwayat-header">
+          <button class="btn-back" id="btnBackSetting">&larr; Kembali</button>
+          <h2>Setting Jadwal Kerja</h2>
+        </div>
+        <div class="riwayat-list">
+          <p class="setting-intro">Atur jam masuk, istirahat, dan pulang untuk setiap hari. Aktifkan "Libur" untuk hari yang tidak ada jadwal kerja (misalnya Sabtu/Minggu).</p>
+          ${barisHtml}
+          <div class="riwayat-actions" style="margin-top:14px;">
+            <button class="btn-primary" id="btnSimpanSetting" style="flex:1;">Simpan</button>
+          </div>
+          <button class="btn-link" id="btnResetDefault" style="margin-top:6px;">Reset ke jadwal default</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById("btnBackSetting").onclick = () => {
+      window._settingDraft = null; // buang draft yang belum disimpan
+      halaman = "utama";
+      render();
+    };
+
+    body.querySelectorAll('[data-field="libur"]').forEach(input => {
+      input.onchange = () => {
+        const hari = input.getAttribute("data-hari");
+        draft[hari].libur = input.checked;
+        render();
+      };
+    });
+    body.querySelectorAll('input[type="time"]').forEach(input => {
+      input.onchange = () => {
+        const hari = input.getAttribute("data-hari");
+        const field = input.getAttribute("data-field");
+        draft[hari][field] = input.value;
+        // Tidak perlu render ulang seluruh halaman di sini supaya fokus input tidak hilang;
+        // nilai sudah tersimpan di draft dan akan dipakai saat tombol Simpan ditekan.
+      };
+    });
+
+    document.getElementById("btnSimpanSetting").onclick = () => {
+      setJadwalKerja(draft);
+      window._settingDraft = null;
+      halaman = "utama";
+      render();
+    };
+    document.getElementById("btnResetDefault").onclick = () => {
+      window._settingDraft = JSON.parse(JSON.stringify(JADWAL_DEFAULT));
+      render();
+    };
+  }
+
+  // Muat jadwal kerja tersimpan (jika ada) sebelum render pertama.
+  jadwalKerja = getJadwalKerja();
+
+  // Ikon header (kalender & setting) statis di HTML, jadi listener cukup dipasang sekali.
+  document.getElementById("btnIconKalender").onclick = () => {
+    halaman = "kalender";
+    bulanKalender = new Date();
+    render();
+  };
+  document.getElementById("btnIconSetting").onclick = () => {
+    halaman = "setting";
+    render();
+  };
+
+  // Muat cache libur (jika ada) sebelum render pertama, supaya badge langsung tampil
+  // tanpa menunggu fetch. Refresh background berjalan terpisah, tidak memblokir UI.
+  const _liburCacheAwal = getLiburCache();
+  if (_liburCacheAwal) liburMap = bangunLiburMap(_liburCacheAwal.data);
+
+  // Dipanggil tiap detik oleh setInterval. Hanya update jam digital di header (dan warna
+  // header saat hari libur) — TIDAK pernah menyentuh innerHTML body. Ini penting karena
+  // halaman riwayat/kalender/detailTanggal/setting berisi form, input, atau posisi scroll
+  // yang sedang dipakai user; merender ulang body-nya tiap detik akan menghapus fokus input
+  // dan mereset scroll, membuat halaman itu terasa "auto-refresh" dan sulit diinteraksi.
+  // Untuk halaman "utama", body TETAP perlu di-render ulang tiap detik karena ada
+  // countdown/jam berjalan yang harus update real-time, jadi di situ kita panggil render()
+  // penuh seperti biasa.
+  function tickJam() {
+    const now = new Date();
+    document.getElementById("clock").textContent = fmtJam(now);
+    document.getElementById("tanggal").textContent = fmtTanggalHeader(now);
+
+    const headerEl = document.getElementById("header");
+    if (infoHari(now).libur) headerEl.classList.add("libur");
+    else headerEl.classList.remove("libur");
+
+    if (halaman === "utama") {
+      render();
+    }
+  }
+
+  render();
+  setInterval(tickJam, 1000);
+  refreshLiburJikaPerlu();
+</script>
+
+</body>
+</html>
