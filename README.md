@@ -23,7 +23,7 @@ Dibuat awalnya untuk kebutuhan pribadi, lalu dibuka sebagai open source karena m
 2. Buka langsung dua kali klik di browser apa saja (Chrome, Edge, Firefox).
 3. Tekan **Absen Masuk** saat tiba, dan **Absen Pulang** saat pulang.
 
-Untuk panduan instalasi lengkap (termasuk cara membuat aplikasi ini otomatis terbuka setiap Windows menyala, dengan ukuran jendela yang rapi), lihat dokumen [Panduan Instalasi](./Panduan-Instalasi-Absen-Pribadi.pdf) yang ditulis untuk pengguna non-teknis.
+Untuk panduan instalasi lengkap (termasuk cara membuat aplikasi ini otomatis terbuka setiap Windows menyala, dengan ukuran jendela yang rapi), lihat [Panduan Instalasi](./PANDUAN-INSTALASI.md) yang ditulis untuk pengguna non-teknis — tersedia juga dalam format [PDF](./Panduan-Instalasi-Absen-Pribadi.pdf) untuk dicetak atau dibaca offline.
 
 ### Menyesuaikan jadwal kerja
 

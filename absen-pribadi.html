@@ -594,13 +594,13 @@
   // Default: Senin-Kamis kerja standar, Jumat ada istirahat panjang, Sabtu-Minggu libur.
   // Ini cuma DEFAULT bawaan — sesuaikan lewat halaman Setting di aplikasi, tidak perlu edit kode.
   const JADWAL_DEFAULT = {
-    senin:   { libur: false, masuk: "09:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "18:00" },
-    selasa:  { libur: false, masuk: "09:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "18:00" },
-    rabu:    { libur: false, masuk: "09:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "18:00" },
-    kamis:   { libur: false, masuk: "09:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "18:00" },
+    senin:   { libur: false, masuk: "08:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "17:00" },
+    selasa:  { libur: false, masuk: "08:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "17:00" },
+    rabu:    { libur: false, masuk: "08:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "17:00" },
+    kamis:   { libur: false, masuk: "08:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "17:00" },
     jumat:   { libur: false, masuk: "08:00", istirahatMulai: "11:00", istirahatSelesai: "13:30", pulang: "17:00" },
-    sabtu:   { libur: true,  masuk: "09:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "18:00" },
-    minggu:  { libur: true,  masuk: "09:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "18:00" },
+    sabtu:   { libur: true,  masuk: "08:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "17:00" },
+    minggu:  { libur: true,  masuk: "08:00", istirahatMulai: "12:00", istirahatSelesai: "13:00", pulang: "17:00" },
   };
 
   let jadwalKerja = { ...JADWAL_DEFAULT };
