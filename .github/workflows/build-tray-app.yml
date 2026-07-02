@@ -4,17 +4,19 @@ on:
   push:
     branches: [main]
     paths:
-      - "tray-app/**"
+      - "absen_tray/**"
+      - "run.py"
+      - "requirements.txt"
       - "absen-pribadi.html"
       - ".github/workflows/build-tray-app.yml"
   workflow_dispatch: {}
 
+permissions:
+  contents: write
+
 jobs:
   build-windows:
     runs-on: windows-latest
-    defaults:
-      run:
-        working-directory: tray-app
     steps:
       - uses: actions/checkout@v4
 
@@ -28,9 +30,20 @@ jobs:
           pip install pyinstaller
 
       - name: Build exe
-        run: pyinstaller --onefile --windowed --name AbsenPribadi --add-data "../absen-pribadi.html;." run.py
+        run: pyinstaller --onefile --windowed --name AbsenPribadi --add-data "absen-pribadi.html;." run.py
 
       - uses: actions/upload-artifact@v4
         with:
           name: AbsenPribadi-windows
-          path: tray-app/dist/AbsenPribadi.exe
+          path: dist/AbsenPribadi.exe
+
+      - name: Publish/replace GitHub Release "latest"
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest dist/AbsenPribadi.exe \
+            --title "AbsenPribadi (build terbaru)" \
+            --notes "Build otomatis dari commit ${{ github.sha }}." \
+            --prerelease

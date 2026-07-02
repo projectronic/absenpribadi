@@ -4,11 +4,12 @@ Menampilkan ../absen-pribadi.html apa adanya di dalam popup borderless dekat
 taskbar (lewat pywebview + Edge WebView2), jadi tampilannya identik dengan
 versi HTML — dark card, rounded corners — bukan widget native yang digambar ulang.
 
-Jalankan dari folder tray-app (setelah `pip install -r requirements.txt`):
+Jalankan dari root repo (setelah `pip install -r requirements.txt`):
     python -m absen_tray
 """
 from __future__ import annotations
 
+import os
 import sys
 import threading
 import time
@@ -20,9 +21,7 @@ import webview
 from .icon import buat_icon_image
 from .posisi import hitung_posisi
 from .status_bridge import StatusBridge
-
-LEBAR_JENDELA = 380
-TINGGI_JENDELA = 640
+from . import preferensi
 
 
 def _cari_html_path() -> Path:
@@ -30,25 +29,33 @@ def _cari_html_path() -> Path:
         # Dijalankan sebagai exe hasil PyInstaller — absen-pribadi.html disertakan
         # lewat --add-data (lihat README.md), diekstrak ke folder sementara sys._MEIPASS.
         return Path(sys._MEIPASS) / "absen-pribadi.html"  # type: ignore[attr-defined]
-    return Path(__file__).resolve().parent.parent.parent / "absen-pribadi.html"
+    return Path(__file__).resolve().parent.parent / "absen-pribadi.html"
+
+
+def _data_dir() -> Path:
+    """Folder data permanen aplikasi (state WebView2, preferensi) — independen dari lokasi exe."""
+    base = Path(os.environ.get("LOCALAPPDATA", Path.home()))
+    return base / "AbsenPribadi"
 
 
 class AbsenTrayApp:
     def __init__(self):
-        self.bridge = StatusBridge()
+        self._data_dir = _data_dir()
+        self.bridge = StatusBridge(self._data_dir)
         self.window: webview.Window | None = None
         self.icon: pystray.Icon | None = None
         self._terlihat = False
 
     def _buat_window(self) -> None:
         html_path = _cari_html_path()
-        x, y = hitung_posisi(LEBAR_JENDELA, TINGGI_JENDELA)
+        lebar, tinggi = preferensi.baca_ukuran_jendela(self._data_dir)
+        x, y = hitung_posisi(lebar, tinggi)
         self.window = webview.create_window(
             "Absen Pribadi",
             url=html_path.as_uri(),
             js_api=self.bridge,
-            width=LEBAR_JENDELA,
-            height=TINGGI_JENDELA,
+            width=lebar,
+            height=tinggi,
             x=x,
             y=y,
             frameless=True,
@@ -56,6 +63,9 @@ class AbsenTrayApp:
             on_top=True,
             hidden=True,
         )
+        # Dipakai StatusBridge.set_window_size() supaya bisa resize jendela yang sedang
+        # aktif (bukan cuma menyimpan preferensi buat sesi berikutnya).
+        self.bridge.window = self.window
 
     # --- callback tray, jalan di thread pystray. Method Window pywebview aman dipanggil
     # dari thread lain karena pywebview marshal otomatis ke thread GUI-nya. ---
@@ -65,7 +75,8 @@ class AbsenTrayApp:
         if self._terlihat:
             self.window.hide()
         else:
-            x, y = hitung_posisi(LEBAR_JENDELA, TINGGI_JENDELA)
+            lebar, tinggi = preferensi.baca_ukuran_jendela(self._data_dir)
+            x, y = hitung_posisi(lebar, tinggi)
             self.window.move(x, y)
             self.window.show()
         self._terlihat = not self._terlihat
@@ -100,7 +111,12 @@ class AbsenTrayApp:
     def run(self) -> None:
         threading.Thread(target=self._jalankan_tray, daemon=True).start()
         self._buat_window()
-        webview.start()
+        # storage_path eksplisit supaya localStorage WebView2 (semua data absen tersimpan
+        # di situ) tinggal di lokasi permanen per-user, bukan default WebView2 yang relatif
+        # ke lokasi exe (bermasalah kalau exe di folder read-only atau dipindah-pindah).
+        webview_data_dir = self._data_dir / "WebView2"
+        webview_data_dir.mkdir(parents=True, exist_ok=True)
+        webview.start(storage_path=str(webview_data_dir))
 
 
 def main() -> None:

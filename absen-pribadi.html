@@ -3,19 +3,76 @@
 <head>
 <meta charset="UTF-8">
 <title>Absen Pribadi</title>
+<script>
+  // Set class "dark" di <html> SEBELUM <style> di-paint, supaya tidak ada flash tema
+  // salah (baca localStorage dulu, fallback ke preferensi sistem kalau belum pernah diatur).
+  // Sengaja inline & sinkron di sini (bukan di blok <script> besar di akhir body, yang
+  // baru jalan setelah body ter-parse — sudah kelewat telat buat menghindari flash).
+  (function() {
+    var TEMA_KEY = "absen_tema";
+    var tersimpan = localStorage.getItem(TEMA_KEY);
+    var gelap = tersimpan ? tersimpan === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    if (gelap) document.documentElement.classList.add("dark");
+  })();
+</script>
 <style>
+  /* Token bergaya shadcn/ui (HSL triplet, dikonsumsi via hsl(var(--x))). :root = tema
+     terang, .dark = tema gelap (di-toggle lewat class "dark" di <html>, lihat script init
+     tema di <head>). --success-*/--warning-*/--destructive-* adalah tambahan di luar
+     palet dasar shadcn, dibutuhkan buat badge libur/lebih/kurang di app ini. */
   :root {
-    --bg: #f8fafc;
-    --card: #ffffff;
-    --dark: #0f172a;
-    --slate-400: #94a3b8;
-    --slate-500: #64748b;
-    --slate-100: #f1f5f9;
-    --slate-200: #e2e8f0;
-    --green-bg: #ecfdf5;
-    --green-border: #a7f3d0;
-    --green-text: #047857;
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 94%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.75rem;
+
+    --success-bg: 152 68% 95%;   --success-border: 152 60% 80%;   --success-fg: 152 76% 30%;
+    --warning-bg: 48 96% 95%;    --warning-border: 48 90% 76%;    --warning-fg: 26 85% 31%;
+    --destructive-bg: 0 86% 97%; --destructive-border: 0 82% 87%; --destructive-fg: 0 74% 42%;
+
+    /* Fixed di kedua tema (tidak di-override di .dark) — dipakai buat surface yang memang
+       dimaksud tetap terlihat sama regardless tema, bukan yang ikut berbalik seperti --primary. */
+    --header-bg: 222.2 47.4% 11.2%;
+    --header-fg: 210 40% 98%;
+    --warning-solid-bg: 26 85% 31%;
+    --warning-solid-fg: 48 96% 82%;
+    --success-solid: 142 70% 50%;
   }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 47% 8%;
+    --card-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 20%;
+    --accent-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+
+    --success-bg: 152 40% 14%;   --success-border: 152 40% 24%;   --success-fg: 152 65% 62%;
+    --warning-bg: 26 40% 14%;    --warning-border: 26 40% 26%;    --warning-fg: 40 92% 65%;
+    --destructive-bg: 0 40% 15%; --destructive-border: 0 40% 28%; --destructive-fg: 0 84% 70%;
+  }
+
   * { box-sizing: border-box; }
   html, body {
     margin: 0;
@@ -24,7 +81,7 @@
   }
   body {
     font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
+    background: hsl(var(--background));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -33,7 +90,7 @@
     width: 100%;
     height: 100%;
     max-width: 420px;
-    background: var(--card);
+    background: hsl(var(--card));
     box-shadow: none;
     border: none;
     overflow: hidden;
@@ -58,7 +115,7 @@
     text-align: center;
     font-size: 10px;
     line-height: 1.5;
-    color: var(--slate-400);
+    color: hsl(var(--muted-foreground));
     padding: 8px 0 12px;
     margin: 0;
   }
@@ -67,8 +124,8 @@
     display: none;
   }
   .header {
-    background: var(--dark);
-    color: white;
+    background: hsl(var(--header-bg));
+    color: hsl(var(--header-fg));
     padding: 18px 14px;
     transition: background 0.3s;
     display: flex;
@@ -77,16 +134,16 @@
     gap: 6px;
   }
   .header.libur {
-    background: #92400e;
+    background: hsl(var(--warning-solid-bg));
   }
   .header.libur .label {
-    color: #fde68a;
+    color: hsl(var(--warning-solid-fg));
   }
   .header .label {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--slate-400);
+    color: hsl(var(--header-fg) / 0.65);
     margin: 0 0 4px;
     text-align: center;
   }
@@ -99,12 +156,12 @@
   }
   .header .tanggal {
     font-size: 11px;
-    color: var(--slate-400);
+    color: hsl(var(--header-fg) / 0.65);
     margin: 3px 0 0;
     text-align: center;
   }
   .header.libur .tanggal {
-    color: #fde68a;
+    color: hsl(var(--warning-solid-fg));
   }
   .header-icon-btn {
     width: 36px;
@@ -124,9 +181,9 @@
   .header-icon-btn:hover { background: rgba(255,255,255,0.24); }
   .header-icon-btn svg { display: block; opacity: 0.95; }
   .libur-badge {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    color: #92400e;
+    background: hsl(var(--warning-bg));
+    border: 1px solid hsl(var(--warning-border));
+    color: hsl(var(--warning-fg));
     font-size: 12px;
     font-weight: 500;
     text-align: center;
@@ -137,7 +194,7 @@
   button {
     width: 100%;
     padding: 16px;
-    border-radius: 12px;
+    border-radius: var(--radius);
     border: none;
     font-size: 16px;
     font-weight: 600;
@@ -145,11 +202,11 @@
     font-family: inherit;
   }
   .btn-primary {
-    background: var(--dark);
-    color: white;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
     transition: background 0.15s;
   }
-  .btn-primary:hover { background: #1e293b; }
+  .btn-primary:hover { filter: brightness(1.15); }
   .grid2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -157,52 +214,52 @@
     margin-bottom: 16px;
   }
   .box {
-    border-radius: 12px;
+    border-radius: var(--radius);
     padding: 16px;
     text-align: center;
-    border: 1px solid var(--slate-200);
-    background: var(--slate-100);
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--muted));
   }
   .box.green {
-    background: var(--green-bg);
-    border-color: var(--green-border);
+    background: hsl(var(--success-bg));
+    border-color: hsl(var(--success-border));
   }
-  .box .label { font-size: 12px; color: var(--slate-500); margin: 0 0 4px; }
-  .box .val { font-size: 21px; font-weight: 600; margin: 0; font-variant-numeric: tabular-nums; color: var(--dark); }
-  .box.green .val { color: var(--green-text); }
+  .box .label { font-size: 12px; color: hsl(var(--muted-foreground)); margin: 0 0 4px; }
+  .box .val { font-size: 21px; font-weight: 600; margin: 0; font-variant-numeric: tabular-nums; color: hsl(var(--foreground)); }
+  .box.green .val { color: hsl(var(--success-fg)); }
   .sisa {
-    border-radius: 12px;
+    border-radius: var(--radius);
     padding: 16px;
     text-align: center;
-    background: var(--slate-100);
+    background: hsl(var(--muted));
     margin-bottom: 14px;
   }
-  .sisa.green { background: var(--green-bg); }
-  .sisa .label { font-size: 12px; color: var(--slate-500); margin: 0 0 4px; }
-  .sisa .val { font-size: 26px; font-weight: 700; margin: 0; font-variant-numeric: tabular-nums; color: var(--dark); }
-  .sisa.green .val { color: var(--green-text); }
+  .sisa.green { background: hsl(var(--success-bg)); }
+  .sisa .label { font-size: 12px; color: hsl(var(--muted-foreground)); margin: 0 0 4px; }
+  .sisa .val { font-size: 26px; font-weight: 700; margin: 0; font-variant-numeric: tabular-nums; color: hsl(var(--foreground)); }
+  .sisa.green .val { color: hsl(var(--success-fg)); }
   .note {
     font-size: 12px;
-    color: var(--slate-400);
+    color: hsl(var(--muted-foreground));
     text-align: center;
     margin: 0 0 14px;
   }
   .btn-reset {
     background: none;
-    color: var(--slate-500);
+    color: hsl(var(--muted-foreground));
     font-size: 14px;
     font-weight: 500;
     padding: 8px;
   }
-  .btn-reset:hover { color: var(--dark); }
+  .btn-reset:hover { color: hsl(var(--foreground)); }
   .btn-link {
     background: none;
-    color: var(--slate-500);
+    color: hsl(var(--muted-foreground));
     font-size: 13px;
     font-weight: 500;
     padding: 8px;
   }
-  .btn-link:hover { color: var(--dark); }
+  .btn-link:hover { color: hsl(var(--foreground)); }
   .riwayat-page {
     display: flex;
     flex-direction: column;
@@ -213,12 +270,12 @@
     align-items: center;
     gap: 10px;
     padding: 16px 20px;
-    border-bottom: 1px solid var(--slate-200);
+    border-bottom: 1px solid hsl(var(--border));
   }
   .riwayat-header h2 {
     font-size: 16px;
     margin: 0;
-    color: var(--dark);
+    color: hsl(var(--foreground));
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -240,19 +297,19 @@
   .kalender-judul {
     font-size: 13px;
     font-weight: 600;
-    color: var(--dark);
+    color: hsl(var(--foreground));
     margin: 0;
   }
   .btn-nav {
     width: auto;
     padding: 2px 10px;
-    background: var(--slate-100);
-    color: var(--dark);
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
     font-size: 15px;
     font-weight: 700;
     border-radius: 7px;
   }
-  .btn-nav:hover { background: var(--slate-200); }
+  .btn-nav:hover { background: hsl(var(--accent)); }
   .kalender-body {
     flex: 1;
     overflow-y: auto;
@@ -272,7 +329,7 @@
   .kal-hari-label {
     text-align: center;
     font-size: 9px;
-    color: var(--slate-400);
+    color: hsl(var(--muted-foreground));
     font-weight: 600;
     padding: 2px 0;
   }
@@ -281,7 +338,7 @@
     height: 34px;
     border: none;
     border-radius: 7px;
-    background: var(--slate-100);
+    background: hsl(var(--muted));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -289,7 +346,7 @@
     padding: 0;
     font-family: inherit;
   }
-  .kal-kotak:hover { background: var(--slate-200); }
+  .kal-kotak:hover { background: hsl(var(--accent)); }
   .kal-kosong {
     background: transparent;
     cursor: default;
@@ -297,28 +354,28 @@
   .kal-kosong:hover { background: transparent; }
   .kal-angka {
     font-size: 11px;
-    color: var(--dark);
+    color: hsl(var(--foreground));
     font-weight: 500;
   }
   .kal-libur {
-    background: #fffbeb;
+    background: hsl(var(--warning-bg));
   }
-  .kal-libur:hover { background: #fef3c7; }
+  .kal-libur:hover { background: hsl(var(--warning-border)); }
   .kal-libur .kal-angka {
-    color: #92400e;
+    color: hsl(var(--warning-fg));
   }
   .kal-today {
-    background: var(--dark);
+    background: hsl(var(--primary));
   }
   .kal-today .kal-angka {
-    color: white;
+    color: hsl(var(--primary-foreground));
     font-weight: 700;
   }
   .kal-today.kal-libur {
-    background: #92400e;
+    background: hsl(var(--warning-solid-bg));
   }
   .kal-today.kal-libur .kal-angka {
-    color: white;
+    color: hsl(var(--warning-solid-fg));
   }
   .kal-dot {
     position: absolute;
@@ -328,10 +385,13 @@
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background: var(--green-text);
+    background: hsl(var(--success-fg));
   }
   .kal-today .kal-dot {
-    background: #6ee7b7;
+    /* --success-solid: fixed di kedua tema, supaya tetap kontras terhadap --primary yang
+       ikut berbalik warna antara tema terang/gelap (bukan hijau muda yang bisa nge-blend
+       ke background terang di dark mode). */
+    background: hsl(var(--success-solid));
   }
   .kalender-legend {
     display: flex;
@@ -339,7 +399,7 @@
     gap: 16px;
     margin-top: 8px;
     font-size: 10px;
-    color: var(--slate-500);
+    color: hsl(var(--muted-foreground));
     flex-shrink: 0;
   }
   .legend-dot {
@@ -350,15 +410,15 @@
     margin-right: 4px;
   }
   .legend-dot-libur {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
+    background: hsl(var(--warning-bg));
+    border: 1px solid hsl(var(--warning-border));
   }
   .legend-dot-absen {
-    background: var(--green-text);
+    background: hsl(var(--success-fg));
   }
   .mode-toggle {
     display: flex;
-    border: 1px solid var(--slate-200);
+    border: 1px solid hsl(var(--border));
     border-radius: 10px;
     overflow: hidden;
     margin-bottom: 8px;
@@ -369,35 +429,35 @@
     padding: 10px;
     font-size: 13px;
     font-weight: 600;
-    background: var(--card);
-    color: var(--slate-500);
+    background: hsl(var(--card));
+    color: hsl(var(--muted-foreground));
   }
   .mode-toggle button.active {
-    background: var(--dark);
-    color: white;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
   }
-  .mode-toggle button:hover { background: var(--slate-100); }
-  .mode-toggle button.active:hover { background: var(--dark); }
+  .mode-toggle button:hover { background: hsl(var(--accent)); }
+  .mode-toggle button.active:hover { background: hsl(var(--primary)); }
   .mode-desc {
     font-size: 12px;
-    color: var(--slate-500);
+    color: hsl(var(--muted-foreground));
     margin: 0 0 14px;
     line-height: 1.5;
   }
   .setting-intro {
     font-size: 12px;
-    color: var(--slate-500);
+    color: hsl(var(--muted-foreground));
     margin: 0 0 14px;
     line-height: 1.5;
   }
   .setting-hari {
-    border: 1px solid var(--slate-200);
+    border: 1px solid hsl(var(--border));
     border-radius: 10px;
     padding: 10px 12px;
     margin-bottom: 8px;
   }
   .setting-hari-libur {
-    background: var(--slate-100);
+    background: hsl(var(--muted));
   }
   .setting-hari-top {
     display: flex;
@@ -407,7 +467,7 @@
   .setting-hari-nama {
     font-size: 13px;
     font-weight: 600;
-    color: var(--dark);
+    color: hsl(var(--foreground));
   }
   .setting-toggle {
     display: flex;
@@ -415,12 +475,12 @@
     gap: 6px;
     cursor: pointer;
     font-size: 12px;
-    color: var(--slate-500);
+    color: hsl(var(--muted-foreground));
   }
   .setting-toggle input {
     width: auto;
     margin: 0;
-    accent-color: var(--dark);
+    accent-color: hsl(var(--primary));
   }
   .setting-hari-jam {
     display: grid;
@@ -431,23 +491,23 @@
   .setting-jam-grup label {
     display: block;
     font-size: 10px;
-    color: var(--slate-500);
+    color: hsl(var(--muted-foreground));
     margin-bottom: 3px;
   }
   .setting-jam-grup input[type="time"] {
     width: 100%;
     padding: 6px 8px;
-    border: 1px solid var(--slate-200);
+    border: 1px solid hsl(var(--input));
     border-radius: 6px;
     font-size: 12px;
     font-family: inherit;
-    color: var(--dark);
+    color: hsl(var(--foreground));
   }
   .btn-back {
     width: auto;
     padding: 6px 10px;
-    background: var(--slate-100);
-    color: var(--dark);
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
     font-size: 13px;
     border-radius: 8px;
   }
@@ -458,7 +518,7 @@
     min-height: 0;
   }
   .riwayat-empty {
-    color: var(--slate-400);
+    color: hsl(var(--muted-foreground));
     font-size: 13px;
     text-align: center;
     padding: 40px 0;
@@ -471,23 +531,23 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: var(--slate-100);
-    border: 1px solid var(--slate-200);
+    background: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
     border-radius: 10px;
     padding: 10px 14px;
     cursor: pointer;
     font-family: inherit;
   }
-  .periode-header:hover { background: var(--slate-200); }
+  .periode-header:hover { background: hsl(var(--accent)); }
   .periode-judul {
     font-size: 13px;
     font-weight: 600;
-    color: var(--dark);
+    color: hsl(var(--foreground));
     margin: 0 0 2px;
   }
   .periode-rentang {
     font-size: 11px;
-    color: var(--slate-500);
+    color: hsl(var(--muted-foreground));
     margin: 0;
   }
   .periode-rekap {
@@ -496,28 +556,28 @@
     margin: 0;
     white-space: nowrap;
   }
-  .periode-rekap.lebih { color: var(--green-text); }
-  .periode-rekap.kurang { color: #b91c1c; }
-  .periode-rekap.neutral { color: var(--slate-500); }
+  .periode-rekap.lebih { color: hsl(var(--success-fg)); }
+  .periode-rekap.kurang { color: hsl(var(--destructive-fg)); }
+  .periode-rekap.neutral { color: hsl(var(--muted-foreground)); }
   .periode-items {
     padding-top: 10px;
   }
   .riwayat-item {
-    border: 1px solid var(--slate-200);
+    border: 1px solid hsl(var(--border));
     border-radius: 10px;
     padding: 12px 14px;
     margin-bottom: 10px;
   }
   .riwayat-item .tgl {
     font-size: 12px;
-    color: var(--slate-500);
+    color: hsl(var(--muted-foreground));
     margin: 0 0 6px;
   }
   .riwayat-item .jamrow {
     display: flex;
     justify-content: space-between;
     font-size: 14px;
-    color: var(--dark);
+    color: hsl(var(--foreground));
     margin-bottom: 8px;
   }
   .riwayat-item .jamrow b { font-weight: 600; }
@@ -530,16 +590,16 @@
     margin: 0 0 10px;
   }
   .selisih-badge.kurang {
-    background: #fef2f2;
-    color: #b91c1c;
+    background: hsl(var(--destructive-bg));
+    color: hsl(var(--destructive-fg));
   }
   .selisih-badge.lebih {
-    background: var(--green-bg);
-    color: var(--green-text);
+    background: hsl(var(--success-bg));
+    color: hsl(var(--success-fg));
   }
   .selisih-badge.neutral {
-    background: var(--slate-100);
-    color: var(--slate-500);
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
   }
   .riwayat-actions {
     display: flex;
@@ -553,15 +613,15 @@
     border-radius: 7px;
   }
   .btn-edit {
-    background: var(--slate-100);
-    color: var(--dark);
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
   }
-  .btn-edit:hover { background: var(--slate-200); }
+  .btn-edit:hover { background: hsl(var(--accent)); }
   .btn-delete {
-    background: #fef2f2;
-    color: #b91c1c;
+    background: hsl(var(--destructive-bg));
+    color: hsl(var(--destructive-fg));
   }
-  .btn-delete:hover { background: #fee2e2; }
+  .btn-delete:hover { background: hsl(var(--destructive-border)); }
   .edit-row {
     display: flex;
     gap: 8px;
@@ -570,7 +630,7 @@
   .edit-row input {
     flex: 1;
     padding: 6px 8px;
-    border: 1px solid var(--slate-200);
+    border: 1px solid hsl(var(--input));
     border-radius: 6px;
     font-size: 13px;
     font-family: inherit;
@@ -579,6 +639,129 @@
     width: auto;
     padding: 6px 10px;
     font-size: 12px;
+  }
+  .ui-switch {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 999px;
+    padding: 0;
+    cursor: pointer;
+    background: hsl(var(--input));
+    transition: background 0.15s;
+  }
+  .ui-switch[data-state="checked"] {
+    background: hsl(var(--primary));
+  }
+  .ui-switch:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  .ui-switch-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: hsl(var(--card));
+    transition: transform 0.15s;
+  }
+  .ui-switch[data-state="checked"] .ui-switch-thumb {
+    transform: translateX(18px);
+  }
+  .preferensi-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 0;
+  }
+  .preferensi-row-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: hsl(var(--foreground));
+  }
+  .preferensi-row-desc {
+    font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    margin: 2px 0 0;
+  }
+  .setting-section-judul {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: hsl(var(--muted-foreground));
+    margin: 18px 0 4px;
+  }
+  .setting-section-judul:first-child {
+    margin-top: 0;
+  }
+  .libur-custom-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .libur-custom-item:last-of-type {
+    border-bottom: none;
+  }
+  .libur-custom-tgl {
+    font-size: 12px;
+    color: hsl(var(--muted-foreground));
+    white-space: nowrap;
+  }
+  .libur-custom-label {
+    font-size: 13px;
+    color: hsl(var(--foreground));
+    flex: 1;
+  }
+  .libur-custom-tambah {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .libur-custom-tambah input[type="date"] {
+    width: auto;
+    padding: 6px 8px;
+    border: 1px solid hsl(var(--input));
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: inherit;
+    color: hsl(var(--foreground));
+    background: hsl(var(--card));
+  }
+  .libur-custom-tambah input[type="text"] {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid hsl(var(--input));
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .libur-custom-tambah button {
+    width: auto;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  .cutoff-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .cutoff-input-row input[type="number"] {
+    width: 70px;
+    padding: 6px 8px;
+    border: 1px solid hsl(var(--input));
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    color: hsl(var(--foreground));
   }
 </style>
 </head>
@@ -649,6 +832,19 @@
   function setModePerhitungan(mode) {
     localStorage.setItem(MODE_KEY, mode);
     modePerhitungan = mode;
+  }
+
+  // ===== Tema Terang/Gelap =====
+  // Key yang sama dipakai script init tema di <head> (jalan lebih dulu, sebelum blok ini
+  // ter-parse, supaya tidak ada flash tema salah) — kalau TEMA_KEY di sini diubah, ubah juga
+  // string literalnya di script init tersebut.
+  const TEMA_KEY = "absen_tema";
+  function getTemaGelap() {
+    return document.documentElement.classList.contains("dark");
+  }
+  function setTemaGelap(gelap) {
+    document.documentElement.classList.toggle("dark", gelap);
+    localStorage.setItem(TEMA_KEY, gelap ? "dark" : "light");
   }
 
   function getJadwalKerja() {
@@ -758,8 +954,9 @@
   };
 
   const LIBUR_KEY = "absen_libur_cache";
-  const LIBUR_REFRESH_MS = 7 * 24 * 3600 * 1000; // coba refresh tiap 7 hari (opsional, lihat di bawah)
-  let liburMap = { ...LIBUR_HARDCODE }; // mulai dari data hardcode, bisa ditimpa cache fetch jika ada & lebih baru
+  const LIBUR_REFRESH_MS = 7 * 24 * 3600 * 1000; // refresh online tiap 7 hari, lihat refreshLiburJikaPerlu() di bawah
+  const LIBUR_CUSTOM_KEY = "absen_libur_custom";
+  let liburMap = { ...LIBUR_HARDCODE, ...getLiburCustom() }; // basis hardcode + custom user; bisa ditimpa cache fetch kalau ada & lebih baru
 
   function getLiburCache() {
     try {
@@ -772,6 +969,32 @@
   function setLiburCache(data) {
     localStorage.setItem(LIBUR_KEY, JSON.stringify(data));
   }
+  // Hari libur tambahan yang ditambahkan user sendiri lewat halaman Setting (mis. cuti
+  // bersama internal kantor yang tidak ada di kalender nasional). Format sama seperti
+  // LIBUR_HARDCODE: { "YYYY-MM-DD": "Label" }.
+  function getLiburCustom() {
+    try {
+      const v = localStorage.getItem(LIBUR_CUSTOM_KEY);
+      return v ? JSON.parse(v) : {};
+    } catch {
+      return {};
+    }
+  }
+  function setLiburCustom(map) {
+    localStorage.setItem(LIBUR_CUSTOM_KEY, JSON.stringify(map));
+  }
+  function tambahLiburCustom(tanggal, label) {
+    const map = getLiburCustom();
+    map[tanggal] = label;
+    setLiburCustom(map);
+    liburMap = bangunLiburMap({});
+  }
+  function hapusLiburCustom(tanggal) {
+    const map = getLiburCustom();
+    delete map[tanggal];
+    setLiburCustom(map);
+    liburMap = bangunLiburMap({});
+  }
   function bangunLiburMap(tahunTahunData) {
     const map = { ...LIBUR_HARDCODE }; // hardcode tetap jadi basis, fetch hanya menambah/menimpa
     Object.values(tahunTahunData).forEach(list => {
@@ -779,18 +1002,20 @@
         map[item.date] = item.localName || item.name || "Hari Libur";
       });
     });
-    return map;
+    return { ...map, ...getLiburCustom() }; // custom user selalu menang kalau tanggalnya sama
   }
   async function fetchLiburTahun(tahun) {
     const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${tahun}/ID`);
     if (!res.ok) throw new Error("Gagal fetch libur " + tahun);
     return await res.json();
   }
-  // Percobaan fetch online ini OPSIONAL — berguna jika file suatu saat dibuka
-  // lewat http/https (bukan file:// lokal) sehingga tidak terblokir CORS.
-  // Jika gagal (termasuk karena CORS saat dibuka sebagai file lokal seperti
-  // biasanya), aplikasi diam-diam tetap memakai LIBUR_HARDCODE di atas —
-  // tidak pernah mengganggu fungsi inti absen.
+  // Jalur UTAMA untuk data libur terkini (termasuk tahun-tahun mendatang begitu SKB-nya
+  // terbit) — jalan tiap kali app dibuka lewat tray app (WebView2 berbasis Chromium, fetch
+  // ke API publik yang mengizinkan origin null/file:// via Access-Control-Allow-Origin: *
+  // seperti nager.at biasanya berhasil, sama seperti di browser biasa). LIBUR_HARDCODE cuma
+  // jadi baseline offline: dipakai instan sebelum fetch pertama selesai, dan permanent
+  // fallback kalau user offline atau API publiknya down — tidak pernah mengganggu fungsi
+  // inti absen kalau fetch gagal.
   async function refreshLiburJikaPerlu() {
     const cache = getLiburCache();
     const sekarang = Date.now();
@@ -897,14 +1122,27 @@
     return { teks: `-${teks}`, kelas: "kurang" };
   }
 
-  const CUTOFF_TANGGAL = 25;
+  // Tanggal cut-off periode gajian, bisa diatur user lewat Setting (default 25, sama
+  // seperti perilaku lama). Dibatasi 1-28 di UI supaya aman lintas semua bulan termasuk
+  // Februari non-kabisat.
+  const CUTOFF_KEY = "absen_cutoff_tanggal";
+  const CUTOFF_DEFAULT = 25;
+  let cutoffTanggal = CUTOFF_DEFAULT;
+  function getCutoffTanggal() {
+    const v = parseInt(localStorage.getItem(CUTOFF_KEY), 10);
+    return Number.isInteger(v) && v >= 1 && v <= 28 ? v : CUTOFF_DEFAULT;
+  }
+  function setCutoffTanggal(n) {
+    localStorage.setItem(CUTOFF_KEY, String(n));
+    cutoffTanggal = n;
+  }
 
-  // Periode kerja: tgl 26 bulan-N s.d. tgl 25 bulan-(N+1).
+  // Periode kerja: tgl (cutoffTanggal+1) bulan-N s.d. tgl cutoffTanggal bulan-(N+1).
   // Diberi nama berdasarkan bulan akhir periode (tempat cut-off-nya jatuh).
   function getPeriodeKey(d) {
     const tahun = d.getFullYear();
     const bulan = d.getMonth(); // 0-11
-    if (d.getDate() > CUTOFF_TANGGAL) {
+    if (d.getDate() > cutoffTanggal) {
       // Masuk periode bulan berikutnya
       const next = new Date(tahun, bulan + 1, 1);
       return `${next.getFullYear()}-${next.getMonth()}`;
@@ -914,8 +1152,8 @@
   function getPeriodeLabel(key) {
     const [tahun, bulan] = key.split("-").map(Number);
     const namaBulan = new Date(tahun, bulan, 1).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
-    const awal = new Date(tahun, bulan - 1, CUTOFF_TANGGAL + 1);
-    const akhir = new Date(tahun, bulan, CUTOFF_TANGGAL);
+    const awal = new Date(tahun, bulan - 1, cutoffTanggal + 1);
+    const akhir = new Date(tahun, bulan, cutoffTanggal);
     const fmtSingkat = (d) => d.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
     return { judul: `Periode ${namaBulan}`, rentang: `${fmtSingkat(awal)} – ${fmtSingkat(akhir)}` };
   }
@@ -1126,18 +1364,18 @@
             <span>Masuk: <b>${fmtJamSingkat(masuk, 0)}</b></span>
             <span>Pulang: <b>${fmtJamSingkat(pulang, 0)}</b></span>
           </div>
-          <div class="jamrow" style="color:var(--slate-500); font-size:12px;">
+          <div class="jamrow" style="color:hsl(var(--muted-foreground)); font-size:12px;">
             <span>Durasi: ${fmtDurasi(durasi)}</span>
           </div>
           <p class="selisih-badge ${sel.kelas}">${sel.teks}</p>
           ${isEditing ? `
             <div class="edit-row">
               <div style="flex:1;">
-                <label style="font-size:11px; color:var(--slate-500); display:block; margin-bottom:3px;">Jam masuk</label>
+                <label style="font-size:11px; color:hsl(var(--muted-foreground)); display:block; margin-bottom:3px;">Jam masuk</label>
                 <input type="time" id="editMasuk-${item.id}" value="${masuk.toTimeString().slice(0,5)}">
               </div>
               <div style="flex:1;">
-                <label style="font-size:11px; color:var(--slate-500); display:block; margin-bottom:3px;">Jam pulang</label>
+                <label style="font-size:11px; color:hsl(var(--muted-foreground)); display:block; margin-bottom:3px;">Jam pulang</label>
                 <input type="time" id="editPulang-${item.id}" value="${pulang.toTimeString().slice(0,5)}">
               </div>
             </div>
@@ -1367,7 +1605,7 @@
               <span>Masuk: <b>${fmtJamSingkat(masuk, 0)}</b></span>
               <span>Pulang: <b>${fmtJamSingkat(pulang, 0)}</b></span>
             </div>
-            <div class="jamrow" style="color:var(--slate-500); font-size:12px;">
+            <div class="jamrow" style="color:hsl(var(--muted-foreground)); font-size:12px;">
               <span>Durasi: ${fmtDurasi(durasi)}</span>
             </div>
             <p class="selisih-badge ${sel.kelas}">${sel.teks}</p>
@@ -1397,12 +1635,50 @@
 
   function renderSetting(body) {
     // Bekerja di atas salinan sementara dulu — baru disimpan permanen saat tombol Simpan ditekan.
+    // Ini berlaku untuk hal yang mengubah cara data DIHITUNG/DIKELOMPOKKAN (jadwal, mode,
+    // cutoff periode). Preferensi aplikasi murni (tema, autostart, ukuran jendela) TIDAK
+    // lewat draft — apply instan begitu diklik/diubah, lihat wiring-nya di bawah.
     if (!window._settingDraft) window._settingDraft = JSON.parse(JSON.stringify(jadwalKerja));
     if (!window._modeDraft) window._modeDraft = modePerhitungan;
+    if (!window._cutoffDraft) window._cutoffDraft = cutoffTanggal;
     const draft = window._settingDraft;
     const modeDraft = window._modeDraft;
+    const cutoffDraft = window._cutoffDraft;
+
+    const temaGelap = getTemaGelap();
+    const preferensiHtml = `
+      <p class="setting-section-judul">Preferensi Aplikasi</p>
+      <div class="preferensi-row">
+        <p class="preferensi-row-label">Mode Gelap</p>
+        <button type="button" class="ui-switch" id="toggleTema" role="switch"
+          aria-checked="${temaGelap}" data-state="${temaGelap ? "checked" : "unchecked"}">
+          <span class="ui-switch-thumb"></span>
+        </button>
+      </div>
+      <div class="preferensi-row">
+        <div>
+          <p class="preferensi-row-label">Buka Otomatis saat Windows Menyala</p>
+          <p class="preferensi-row-desc" id="autostartDesc">Memuat…</p>
+        </div>
+        <button type="button" class="ui-switch" id="toggleAutostart" role="switch"
+          aria-checked="false" data-state="unchecked" disabled>
+          <span class="ui-switch-thumb"></span>
+        </button>
+      </div>
+      <div class="preferensi-row">
+        <div>
+          <p class="preferensi-row-label">Ukuran Jendela Popup</p>
+          <p class="preferensi-row-desc" id="ukuranJendelaDesc">Memuat…</p>
+        </div>
+        <div class="cutoff-input-row">
+          <input type="number" id="inputLebarJendela" min="300" max="600" style="width:56px;" disabled>
+          <input type="number" id="inputTinggiJendela" min="400" max="900" style="width:56px;" disabled>
+        </div>
+      </div>
+    `;
 
     const modeToggleHtml = `
+      <p class="setting-section-judul">Target Jam Pulang</p>
       <div class="mode-toggle">
         <button type="button" class="${modeDraft === "pulang" ? "active" : ""}" data-mode="pulang">Waktu Pulang</button>
         <button type="button" class="${modeDraft === "kerja" ? "active" : ""}" data-mode="kerja">Waktu Kerja</button>
@@ -1445,16 +1721,51 @@
       `;
     }).join("");
 
+    const cutoffHtml = `
+      <p class="setting-section-judul">Periode Gajian</p>
+      <div class="cutoff-input-row">
+        <label for="inputCutoff" style="font-size:13px; color:hsl(var(--foreground));">Tanggal cut-off</label>
+        <input type="number" id="inputCutoff" min="1" max="28" value="${cutoffDraft}">
+      </div>
+      <p class="setting-intro">Periode berjalan dari tanggal ${cutoffDraft + 1} bulan sebelumnya sampai tanggal ${cutoffDraft} bulan ini.</p>
+    `;
+
+    const liburCustomMap = getLiburCustom();
+    const liburCustomEntries = Object.entries(liburCustomMap).sort((a, b) => a[0].localeCompare(b[0]));
+    const liburCustomListHtml = liburCustomEntries.length
+      ? liburCustomEntries.map(([tgl, label]) => `
+          <div class="libur-custom-item">
+            <span class="libur-custom-tgl">${tgl}</span>
+            <span class="libur-custom-label">${label}</span>
+            <button type="button" class="btn-delete" style="width:auto; padding:4px 10px; font-size:11px;" data-hapus-libur="${tgl}">Hapus</button>
+          </div>
+        `).join("")
+      : `<p class="preferensi-row-desc">Belum ada hari libur tambahan.</p>`;
+    const liburCustomHtml = `
+      <p class="setting-section-judul">Hari Libur Tambahan</p>
+      <p class="setting-intro">Selain kalender libur nasional, tambahkan tanggal libur sendiri (mis. cuti bersama internal kantor).</p>
+      ${liburCustomListHtml}
+      <div class="libur-custom-tambah">
+        <input type="date" id="inputTanggalLiburBaru">
+        <input type="text" id="inputLabelLiburBaru" placeholder="Label (mis. Cuti bersama kantor)">
+        <button type="button" class="btn-edit" id="btnTambahLiburCustom">Tambah</button>
+      </div>
+    `;
+
     body.innerHTML = `
       <div class="riwayat-page">
         <div class="riwayat-header">
           <button class="btn-back" id="btnBackSetting">&larr; Kembali</button>
-          <h2>Setting Jadwal Kerja</h2>
+          <h2>Setting</h2>
         </div>
         <div class="riwayat-list">
+          ${preferensiHtml}
           ${modeToggleHtml}
+          <p class="setting-section-judul">Jadwal Kerja</p>
           <p class="setting-intro">Atur jam masuk, istirahat, dan pulang untuk setiap hari. Aktifkan "Libur" untuk hari yang tidak ada jadwal kerja (misalnya Sabtu/Minggu).</p>
           ${barisHtml}
+          ${cutoffHtml}
+          ${liburCustomHtml}
           <div class="riwayat-actions" style="margin-top:14px;">
             <button class="btn-primary" id="btnSimpanSetting" style="flex:1;">Simpan</button>
           </div>
@@ -1466,10 +1777,81 @@
     document.getElementById("btnBackSetting").onclick = () => {
       window._settingDraft = null; // buang draft yang belum disimpan
       window._modeDraft = null;
+      window._cutoffDraft = null;
       halaman = "utama";
       render();
     };
 
+    // --- Preferensi aplikasi: apply instan, tidak lewat draft/Simpan ---
+    document.getElementById("toggleTema").onclick = () => {
+      setTemaGelap(!getTemaGelap());
+      render();
+    };
+
+    const adaBridge = !!(window.pywebview && window.pywebview.api);
+    const btnAutostart = document.getElementById("toggleAutostart");
+    const autostartDesc = document.getElementById("autostartDesc");
+    if (adaBridge && window.pywebview.api.get_autostart) {
+      window.pywebview.api.get_autostart().then(enabled => {
+        btnAutostart.disabled = false;
+        btnAutostart.setAttribute("data-state", enabled ? "checked" : "unchecked");
+        btnAutostart.setAttribute("aria-checked", String(enabled));
+        autostartDesc.textContent = "Aplikasi otomatis terbuka setiap kali Windows login.";
+      });
+      btnAutostart.onclick = () => {
+        const baru = btnAutostart.getAttribute("data-state") !== "checked";
+        btnAutostart.disabled = true;
+        window.pywebview.api.set_autostart(baru).then(hasil => {
+          btnAutostart.disabled = false;
+          btnAutostart.setAttribute("data-state", hasil ? "checked" : "unchecked");
+          btnAutostart.setAttribute("aria-checked", String(hasil));
+        });
+      };
+    } else {
+      autostartDesc.textContent = "Hanya tersedia di aplikasi tray Windows.";
+    }
+
+    const inputLebar = document.getElementById("inputLebarJendela");
+    const inputTinggi = document.getElementById("inputTinggiJendela");
+    const ukuranDesc = document.getElementById("ukuranJendelaDesc");
+    if (adaBridge && window.pywebview.api.get_window_size) {
+      window.pywebview.api.get_window_size().then(ukuran => {
+        inputLebar.disabled = false;
+        inputTinggi.disabled = false;
+        inputLebar.value = ukuran.lebar;
+        inputTinggi.value = ukuran.tinggi;
+        ukuranDesc.textContent = "Lebar × tinggi (px), berlaku saat popup dibuka lagi.";
+      });
+      const terapkanUkuran = () => {
+        const lebar = parseInt(inputLebar.value, 10);
+        const tinggi = parseInt(inputTinggi.value, 10);
+        if (!Number.isInteger(lebar) || !Number.isInteger(tinggi)) return;
+        window.pywebview.api.set_window_size(lebar, tinggi);
+      };
+      inputLebar.onchange = terapkanUkuran;
+      inputTinggi.onchange = terapkanUkuran;
+    } else {
+      ukuranDesc.textContent = "Hanya tersedia di aplikasi tray Windows.";
+    }
+
+    // --- Hari libur tambahan: apply instan (tambah/hapus langsung tersimpan) ---
+    body.querySelectorAll("[data-hapus-libur]").forEach(btn => {
+      btn.onclick = () => {
+        hapusLiburCustom(btn.getAttribute("data-hapus-libur"));
+        render();
+      };
+    });
+    document.getElementById("btnTambahLiburCustom").onclick = () => {
+      const inputTgl = document.getElementById("inputTanggalLiburBaru");
+      const inputLabel = document.getElementById("inputLabelLiburBaru");
+      const tgl = inputTgl.value;
+      const label = inputLabel.value.trim();
+      if (!tgl || !label) return;
+      tambahLiburCustom(tgl, label);
+      render();
+    };
+
+    // --- Draft + Simpan: jadwal per hari, mode target jam pulang, cutoff periode ---
     body.querySelectorAll("[data-mode]").forEach(btn => {
       btn.onclick = () => {
         window._modeDraft = btn.getAttribute("data-mode");
@@ -1493,12 +1875,21 @@
         // nilai sudah tersimpan di draft dan akan dipakai saat tombol Simpan ditekan.
       };
     });
+    document.getElementById("inputCutoff").onchange = (e) => {
+      const n = parseInt(e.target.value, 10);
+      if (Number.isInteger(n) && n >= 1 && n <= 28) {
+        window._cutoffDraft = n;
+        render();
+      }
+    };
 
     document.getElementById("btnSimpanSetting").onclick = () => {
       setJadwalKerja(draft);
       setModePerhitungan(modeDraft);
+      setCutoffTanggal(cutoffDraft);
       window._settingDraft = null;
       window._modeDraft = null;
+      window._cutoffDraft = null;
       halaman = "utama";
       render();
     };
@@ -1508,9 +1899,10 @@
     };
   }
 
-  // Muat jadwal kerja & mode perhitungan tersimpan (jika ada) sebelum render pertama.
+  // Muat jadwal kerja, mode perhitungan, & tanggal cutoff periode tersimpan (jika ada) sebelum render pertama.
   jadwalKerja = getJadwalKerja();
   modePerhitungan = getModePerhitungan();
+  cutoffTanggal = getCutoffTanggal();
 
   // Ikon header (kalender & setting) statis di HTML, jadi listener cukup dipasang sekali.
   document.getElementById("btnIconKalender").onclick = () => {
@@ -1552,7 +1944,7 @@
   }
 
   // Kalau file ini sedang dibuka di dalam tray app versi pywebview (lihat
-  // tray-app/absen_tray_web), kirim status absen saat ini ke Python tiap detik supaya
+  // absen_tray/), kirim status absen saat ini ke Python tiap detik supaya
   // ikon & tooltip tray bisa ikut ter-update. Di browser biasa window.pywebview tidak
   // pernah ada, jadi fungsi ini langsung return tanpa efek apa pun.
   function laporkanStatusKeTray() {
