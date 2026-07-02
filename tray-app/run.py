@@ -1,4 +1,4 @@
-"""Entry point untuk PyInstaller (lihat README: build ke .exe/.app tunggal).
+"""Entry point untuk PyInstaller (lihat README.md untuk cara build ke .exe).
 
 `python -m absen_tray` juga bisa dipakai langsung untuk development.
 """

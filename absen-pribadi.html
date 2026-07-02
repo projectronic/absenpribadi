@@ -1548,9 +1548,44 @@
     if (halaman === "utama") {
       render();
     }
+    laporkanStatusKeTray();
+  }
+
+  // Kalau file ini sedang dibuka di dalam tray app versi pywebview (lihat
+  // tray-app/absen_tray_web), kirim status absen saat ini ke Python tiap detik supaya
+  // ikon & tooltip tray bisa ikut ter-update. Di browser biasa window.pywebview tidak
+  // pernah ada, jadi fungsi ini langsung return tanpa efek apa pun.
+  function laporkanStatusKeTray() {
+    if (!(window.pywebview && window.pywebview.api && window.pywebview.api.laporkan_status)) return;
+    const now = new Date();
+    const absenMasuk = getAbsenMasuk();
+    let status = "belum";
+    let tooltip = "Absen Pribadi — belum absen masuk";
+    if (absenMasuk) {
+      const jadwalHariIni = getJadwalHari(absenMasuk);
+      if (jadwalHariIni.libur) {
+        status = "libur";
+        tooltip = `Absen Pribadi — masuk ${fmtJamSingkat(absenMasuk, 0)} (hari libur)`;
+      } else {
+        const jamPulang = hitungTargetPulang(absenMasuk, jadwalHariIni, modePerhitungan);
+        const sisaMs = jamPulang.getTime() - now.getTime();
+        if (sisaMs <= 0) {
+          status = "boleh_pulang";
+          tooltip = "Absen Pribadi — sudah boleh pulang";
+        } else {
+          status = "bekerja";
+          const totalMenit = Math.floor(sisaMs / 60000);
+          const j = Math.floor(totalMenit / 60);
+          const m = totalMenit % 60;
+          tooltip = `Absen Pribadi — sisa ${j}j ${m}m menuju jam pulang`;
+        }
+      }
+    }
+    window.pywebview.api.laporkan_status(status, tooltip);
   }
 
   render();
+  laporkanStatusKeTray();
   setInterval(tickJam, 1000);
   refreshLiburJikaPerlu();
 </script>

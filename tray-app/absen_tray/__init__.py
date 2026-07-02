@@ -1,7 +1,8 @@
-"""Absen Pribadi — versi tray app (Windows/Linux/Mac) pakai pystray + Tkinter.
+"""Absen Pribadi — tray app.
 
-Port dari logika di ../../absen-pribadi.html supaya perilaku (jadwal kerja,
-mode "Waktu Pulang" vs "Waktu Kerja", riwayat) tetap konsisten dengan versi HTML.
+Menampilkan ../absen-pribadi.html apa adanya di dalam popup borderless dekat
+taskbar (lewat pywebview + Edge WebView2), jadi tampilannya identik dengan
+versi HTML, bukan widget native yang digambar ulang.
 """
 
 __version__ = "0.1.0"

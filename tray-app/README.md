@@ -1,12 +1,14 @@
-# Absen Pribadi — Tray App (scaffold)
+# Absen Pribadi — Tray App
 
-Versi system-tray dari [`absen-pribadi.html`](../absen-pribadi.html), dibangun seperti
-[Usage Monitor for Claude](https://github.com/jens-duttke/usage-monitor-for-claude):
-ikon di tray/menu bar, klik untuk buka popup status, klik kanan untuk menu cepat.
+Versi system-tray dari [`absen-pribadi.html`](../absen-pribadi.html): ikon di tray,
+klik untuk buka popup status, klik kanan untuk menu cepat.
 
-Logika jadwal kerja (`absen_tray/jadwal.py`) adalah port langsung dari fungsi-fungsi
-di `absen-pribadi.html`, termasuk mode **Waktu Pulang** (target tetap sesuai jadwal)
-dan **Waktu Kerja** (target = jam masuk aktual + durasi kerja).
+UI-nya bukan ditulis ulang pakai widget native — popup yang muncul memuat
+`absen-pribadi.html` apa adanya lewat [pywebview](https://pywebview.flowrl.com/)
+(Edge WebView2 di Windows), jadi tampilannya identik dengan versi HTML dan otomatis
+ikut semua fiturnya (kalender, hari libur nasional, riwayat per periode, mode
+**Waktu Pulang**/**Waktu Kerja**, dll) tanpa perlu port ulang logikanya ke Python.
+State (absen masuk, riwayat, jadwal, setting) ikut localStorage bawaan WebView2.
 
 ## Menjalankan (development)
 
@@ -18,25 +20,26 @@ pip install -r requirements.txt
 python -m absen_tray
 ```
 
-**Linux**: `tkinter` bukan bagian dari `pip install`, biasanya perlu paket sistem
-terpisah, mis. `sudo apt install python3-tk` (Debian/Ubuntu) sebelum menjalankan.
-Windows & macOS umumnya sudah menyertakan `tkinter` di instalasi Python resmi.
+Butuh Edge WebView2 runtime — sudah bawaan Windows 10/11, tidak perlu install manual.
 
 ## Build jadi satu file executable
 
 ```bash
 pip install pyinstaller
-pyinstaller --onefile --windowed --name AbsenPribadi run.py
+pyinstaller --onefile --windowed --name AbsenPribadi --add-data "../absen-pribadi.html;." run.py
 ```
 
-Hasilnya ada di `dist/AbsenPribadi.exe` (Windows) atau `dist/AbsenPribadi` (Linux/macOS).
+(Di Linux/macOS, pemisah `--add-data` pakai `:` bukan `;`.)
+
+Hasilnya ada di `dist/AbsenPribadi.exe` (Windows).
 
 ## Build otomatis lewat GitHub Actions
 
 Tidak perlu install Python di Windows sama sekali — workflow
 [`.github/workflows/build-tray-app.yml`](../.github/workflows/build-tray-app.yml) build
-`.exe` otomatis di runner `windows-latest` tiap kali ada push ke `tray-app/**` di branch
-`main`, atau dipicu manual lewat tab **Actions** (tombol "Run workflow").
+`.exe` otomatis di runner `windows-latest` tiap kali ada push ke `tray-app/**` atau
+`absen-pribadi.html` di branch `main`, atau dipicu manual lewat tab **Actions** (tombol
+"Run workflow").
 
 Cara ambil hasilnya: buka repo di GitHub → tab **Actions** → pilih run terbaru dari
 workflow "Build Absen Pribadi Tray App (Windows)" → download artifact
@@ -47,25 +50,20 @@ workflow "Build Absen Pribadi Tray App (Windows)" → download artifact
 
 ```
 tray-app/
-  run.py                 entry point untuk PyInstaller
+  run.py                     entry point PyInstaller
   absen_tray/
-    __main__.py           setup tray icon (pystray) + main loop Tkinter
-    jadwal.py              logika jadwal kerja & target jam pulang (port dari .html)
-    state.py                penyimpanan state (JSON di ~/.absen_pribadi/state.json)
-    icon.py                 gambar ikon tray dinamis (Pillow), warna berubah sesuai status
-    ui.py                   jendela Tkinter: status popup, riwayat, setting
+    __main__.py                 setup tray icon (pystray) + window pywebview yang memuat ../absen-pribadi.html
+    posisi.py                    hitung posisi popup menempel pojok layar (perkiraan taskbar di bawah)
+    status_bridge.py              jembatan status dari JS (di dalam webview) ke Python, buat update ikon tray
+    icon.py                       gambar ikon tray dinamis (Pillow), warna berubah sesuai status
 ```
 
-State disimpan di `~/.absen_pribadi/state.json` — kalau butuh reset total, hapus file
-ini (mirip clear localStorage di versi HTML).
+## Keterbatasan
 
-## Yang belum diimplementasikan (dibanding versi HTML)
-
-Ini scaffold/MVP, bukan port 1:1. Yang sengaja belum dibawa ke sini:
-
-- Kalender bulanan & integrasi hari libur nasional (`LIBUR_HARDCODE` / fetch nager.at).
-- Pengelompokan riwayat per periode gajian (cut-off tgl 26–25) beserta rekap per periode.
-- Edit jam masuk/pulang pada entri riwayat yang sudah tercatat (saat ini cuma bisa dihapus).
-
-Semua fitur di atas ada & jalan penuh di `absen-pribadi.html` — dua versi ini independen,
-tidak saling sinkron datanya (state tray app terpisah dari localStorage browser).
+- Posisi popup (`posisi.py`) disederhanakan — cuma asumsi taskbar di bawah, monitor
+  utama. Belum menangani taskbar di kiri/kanan/atas atau layout multi-monitor.
+- Popup tidak bisa di-drag, dan tidak otomatis tertutup saat klik di luar jendela —
+  toggle buka/tutup lewat klik ikon tray.
+- Belum dites end-to-end di Windows sungguhan (dibuat & dicek sintaksnya dari
+  lingkungan Linux tanpa display) — kemungkinan ada isu PyInstaller hidden-imports
+  untuk backend WebView2 yang baru ketahuan saat build/run sungguhan.
