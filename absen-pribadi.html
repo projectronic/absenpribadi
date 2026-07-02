@@ -42,10 +42,6 @@
     --warning-bg: 48 96% 95%;    --warning-border: 48 90% 76%;    --warning-fg: 26 85% 31%;
     --destructive-bg: 0 86% 97%; --destructive-border: 0 82% 87%; --destructive-fg: 0 74% 42%;
 
-    /* Fixed di kedua tema (tidak di-override di .dark) — dipakai buat surface yang memang
-       dimaksud tetap terlihat sama regardless tema, bukan yang ikut berbalik seperti --primary. */
-    --header-bg: 222.2 47.4% 11.2%;
-    --header-fg: 210 40% 98%;
     --warning-solid-bg: 26 85% 31%;
     --warning-solid-fg: 48 96% 82%;
     --success-solid: 142 70% 50%;
@@ -123,9 +119,13 @@
   .card:has(.kalender-page) .footer-signature {
     display: none;
   }
+  /* Header sengaja pakai warna literal (bukan token var(--x)), bukan hsl(var(--primary))
+     dkk — dimaksud tetap terlihat sama persis di kedua tema (mirip status bar aplikasi
+     native), independen dari toggle dark/light, dan tidak bergantung ke resolusi custom
+     property sama sekali (paling defensif buat elemen paling penting harus selalu terbaca). */
   .header {
-    background: hsl(var(--header-bg));
-    color: hsl(var(--header-fg));
+    background: #0f172a;
+    color: #ffffff;
     padding: 18px 14px;
     transition: background 0.3s;
     display: flex;
@@ -134,16 +134,16 @@
     gap: 6px;
   }
   .header.libur {
-    background: hsl(var(--warning-solid-bg));
+    background: #92400e;
   }
   .header.libur .label {
-    color: hsl(var(--warning-solid-fg));
+    color: #fde68a;
   }
   .header .label {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: hsl(var(--header-fg) / 0.65);
+    color: rgba(255,255,255,0.65);
     margin: 0 0 4px;
     text-align: center;
   }
@@ -153,15 +153,16 @@
     font-variant-numeric: tabular-nums;
     margin: 0;
     text-align: center;
+    color: #ffffff;
   }
   .header .tanggal {
     font-size: 11px;
-    color: hsl(var(--header-fg) / 0.65);
+    color: rgba(255,255,255,0.65);
     margin: 3px 0 0;
     text-align: center;
   }
   .header.libur .tanggal {
-    color: hsl(var(--warning-solid-fg));
+    color: #fde68a;
   }
   .header-icon-btn {
     width: 36px;
@@ -796,6 +797,7 @@
   let periodeTertutup = new Set(); // key periode yang di-collapse user
   let bulanKalender = new Date(); // bulan yang sedang ditampilkan di tab kalender
   let tanggalDipilih = null; // Date object, tanggal yang diklik dari kalender
+  let sedangEditAbsenMasuk = false; // true saat form edit jam masuk (halaman utama) sedang terbuka
 
   // ===== Jadwal Kerja (bisa disesuaikan lewat halaman Setting) =====
   const HARI_LIST = ["senin", "selasa", "rabu", "kamis", "jumat", "sabtu", "minggu"];
@@ -1082,6 +1084,16 @@
   function clearAbsenMasuk() {
     localStorage.removeItem(KEY);
   }
+  // Koreksi jam absen masuk yang SEDANG BERJALAN (belum absen pulang) — mis. lupa absen
+  // pas tiba jam 08:12, baru ditekan jam 10:22. Cuma ubah jam:menit, tanggalnya tetap sama
+  // dengan absenMasukLama (bukan buat pindah ke hari lain).
+  function setAbsenMasukJam(absenMasukLama, jamStr) {
+    const [h, m] = jamStr.split(":").map(Number);
+    if (isNaN(h) || isNaN(m)) return;
+    const baru = new Date(absenMasukLama);
+    baru.setHours(h, m, 0, 0);
+    setAbsenMasuk(baru);
+  }
 
   function fmtTanggal(d) {
     return d.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -1313,15 +1325,32 @@
       ? `<p class="note">Jadwal hari ini: ${fmtJadwalSingkat(jadwalHariIni)}${modePerhitungan === "kerja" ? " &middot; mode: waktu kerja" : ""}</p>`
       : `<p class="note">Hari ini tidak ada jadwal kerja (libur) &mdash; absen tetap tercatat tanpa target jam pulang.</p>`;
 
+    // Tombol/link "Edit" kecil di bawah nilai Jam Masuk, buat koreksi kalau lupa absen
+    // tepat waktu (mis. tiba jam 08:12 tapi baru sempat tekan tombol jam 10:22). Form
+    // edit-nya sendiri dirender full-width di luar grid2 (lebih lega buat input + tombol).
+    const editJamMasukTombolHtml = sedangEditAbsenMasuk
+      ? ""
+      : `<button class="btn-link" id="btnEditJamMasuk" style="width:auto; padding:2px 6px; font-size:10px; margin-top:2px;">Edit</button>`;
+    const editJamMasukFormHtml = sedangEditAbsenMasuk
+      ? `
+        <div class="edit-row">
+          <input type="time" id="inputEditJamMasuk" value="${absenMasuk.toTimeString().slice(0, 5)}">
+          <button class="btn-edit" id="btnSimpanJamMasuk" style="width:auto; padding:6px 10px; font-size:12px;">Simpan</button>
+          <button class="btn-link" id="btnBatalEditJamMasuk" style="width:auto; padding:6px 10px; font-size:12px;">Batal</button>
+        </div>`
+      : "";
+
     body.innerHTML = `
       ${badgeLibur}
       <div class="grid2">
         <div class="box">
           <p class="label">Jam Masuk</p>
           <p class="val">${fmtJamSingkat(absenMasuk, 0)}</p>
+          ${editJamMasukTombolHtml}
         </div>
         ${kotakPulangHtml}
       </div>
+      ${editJamMasukFormHtml}
       ${sisaLabelHtml}
       ${noteHtml}
       <button class="btn-primary" id="btnAbsenPulang">Absen Pulang</button>
@@ -1333,6 +1362,7 @@
     document.getElementById("btnAbsenPulang").onclick = () => {
       tambahRiwayat(absenMasuk, new Date(), true);
       clearAbsenMasuk();
+      sedangEditAbsenMasuk = false; // reset, supaya tidak "nempel" ke sesi absen masuk berikutnya
       render();
     };
     document.getElementById("btnReset").onclick = () => {
@@ -1340,12 +1370,30 @@
       // Kalau hari libur (tidak ada target), pakai waktu sekarang sebagai jam pulang.
       tambahRiwayat(absenMasuk, adaTarget ? jamPulang : new Date(), adaTarget ? false : true);
       clearAbsenMasuk();
+      sedangEditAbsenMasuk = false;
       render();
     };
     document.getElementById("btnLihatRiwayat").onclick = () => {
       halaman = "riwayat";
       render();
     };
+
+    if (sedangEditAbsenMasuk) {
+      document.getElementById("btnSimpanJamMasuk").onclick = () => {
+        setAbsenMasukJam(absenMasuk, document.getElementById("inputEditJamMasuk").value);
+        sedangEditAbsenMasuk = false;
+        render();
+      };
+      document.getElementById("btnBatalEditJamMasuk").onclick = () => {
+        sedangEditAbsenMasuk = false;
+        render();
+      };
+    } else {
+      document.getElementById("btnEditJamMasuk").onclick = () => {
+        sedangEditAbsenMasuk = true;
+        render();
+      };
+    }
   }
 
   function renderRiwayat(body) {
@@ -1788,50 +1836,64 @@
       render();
     };
 
-    const adaBridge = !!(window.pywebview && window.pywebview.api);
-    const btnAutostart = document.getElementById("toggleAutostart");
-    const autostartDesc = document.getElementById("autostartDesc");
-    if (adaBridge && window.pywebview.api.get_autostart) {
-      window.pywebview.api.get_autostart().then(enabled => {
-        btnAutostart.disabled = false;
-        btnAutostart.setAttribute("data-state", enabled ? "checked" : "unchecked");
-        btnAutostart.setAttribute("aria-checked", String(enabled));
-        autostartDesc.textContent = "Aplikasi otomatis terbuka setiap kali Windows login.";
-      });
-      btnAutostart.onclick = () => {
-        const baru = btnAutostart.getAttribute("data-state") !== "checked";
-        btnAutostart.disabled = true;
-        window.pywebview.api.set_autostart(baru).then(hasil => {
-          btnAutostart.disabled = false;
-          btnAutostart.setAttribute("data-state", hasil ? "checked" : "unchecked");
-          btnAutostart.setAttribute("aria-checked", String(hasil));
-        });
-      };
-    } else {
-      autostartDesc.textContent = "Hanya tersedia di aplikasi tray Windows.";
-    }
+    // window.pywebview kadang belum siap PERSIS saat renderSetting() ini jalan (di-inject
+    // pywebview secara async setelah halaman dimuat) — jangan cuma cek sekali lalu nyerah;
+    // kalau belum ada, coba lagi begitu event "pywebviewready" nyala. Fungsi ini aman
+    // dipanggil dua kali (elemen di-query ulang tiap kali, & assignment .onclick bukan
+    // addEventListener jadi tidak numpuk listener).
+    const wireBridgeSettings = () => {
+      const adaBridge = !!(window.pywebview && window.pywebview.api);
 
-    const inputLebar = document.getElementById("inputLebarJendela");
-    const inputTinggi = document.getElementById("inputTinggiJendela");
-    const ukuranDesc = document.getElementById("ukuranJendelaDesc");
-    if (adaBridge && window.pywebview.api.get_window_size) {
-      window.pywebview.api.get_window_size().then(ukuran => {
-        inputLebar.disabled = false;
-        inputTinggi.disabled = false;
-        inputLebar.value = ukuran.lebar;
-        inputTinggi.value = ukuran.tinggi;
-        ukuranDesc.textContent = "Lebar × tinggi (px), berlaku saat popup dibuka lagi.";
-      });
-      const terapkanUkuran = () => {
-        const lebar = parseInt(inputLebar.value, 10);
-        const tinggi = parseInt(inputTinggi.value, 10);
-        if (!Number.isInteger(lebar) || !Number.isInteger(tinggi)) return;
-        window.pywebview.api.set_window_size(lebar, tinggi);
-      };
-      inputLebar.onchange = terapkanUkuran;
-      inputTinggi.onchange = terapkanUkuran;
-    } else {
-      ukuranDesc.textContent = "Hanya tersedia di aplikasi tray Windows.";
+      const btnAutostart = document.getElementById("toggleAutostart");
+      const autostartDesc = document.getElementById("autostartDesc");
+      if (!btnAutostart || !autostartDesc) return; // halaman Setting sudah di-render ulang, elemen lama sudah tidak ada
+      if (adaBridge && window.pywebview.api.get_autostart) {
+        window.pywebview.api.get_autostart().then(enabled => {
+          btnAutostart.disabled = false;
+          btnAutostart.setAttribute("data-state", enabled ? "checked" : "unchecked");
+          btnAutostart.setAttribute("aria-checked", String(enabled));
+          autostartDesc.textContent = "Aplikasi otomatis terbuka setiap kali Windows login.";
+        });
+        btnAutostart.onclick = () => {
+          const baru = btnAutostart.getAttribute("data-state") !== "checked";
+          btnAutostart.disabled = true;
+          window.pywebview.api.set_autostart(baru).then(hasil => {
+            btnAutostart.disabled = false;
+            btnAutostart.setAttribute("data-state", hasil ? "checked" : "unchecked");
+            btnAutostart.setAttribute("aria-checked", String(hasil));
+          });
+        };
+      } else {
+        autostartDesc.textContent = "Hanya tersedia di aplikasi tray Windows.";
+      }
+
+      const inputLebar = document.getElementById("inputLebarJendela");
+      const inputTinggi = document.getElementById("inputTinggiJendela");
+      const ukuranDesc = document.getElementById("ukuranJendelaDesc");
+      if (!inputLebar || !inputTinggi || !ukuranDesc) return;
+      if (adaBridge && window.pywebview.api.get_window_size) {
+        window.pywebview.api.get_window_size().then(ukuran => {
+          inputLebar.disabled = false;
+          inputTinggi.disabled = false;
+          inputLebar.value = ukuran.lebar;
+          inputTinggi.value = ukuran.tinggi;
+          ukuranDesc.textContent = "Lebar × tinggi (px), berlaku saat popup dibuka lagi.";
+        });
+        const terapkanUkuran = () => {
+          const lebar = parseInt(inputLebar.value, 10);
+          const tinggi = parseInt(inputTinggi.value, 10);
+          if (!Number.isInteger(lebar) || !Number.isInteger(tinggi)) return;
+          window.pywebview.api.set_window_size(lebar, tinggi);
+        };
+        inputLebar.onchange = terapkanUkuran;
+        inputTinggi.onchange = terapkanUkuran;
+      } else {
+        ukuranDesc.textContent = "Hanya tersedia di aplikasi tray Windows.";
+      }
+    };
+    wireBridgeSettings();
+    if (!(window.pywebview && window.pywebview.api)) {
+      window.addEventListener("pywebviewready", wireBridgeSettings, { once: true });
     }
 
     // --- Hari libur tambahan: apply instan (tambah/hapus langsung tersimpan) ---
@@ -1937,7 +1999,10 @@
     if (infoHari(now).libur) headerEl.classList.add("libur");
     else headerEl.classList.remove("libur");
 
-    if (halaman === "utama") {
+    // sedangEditAbsenMasuk: jangan render ulang body selagi form edit jam masuk terbuka,
+    // supaya nilai yang sedang diketik/fokus di <input type="time"> tidak kehapus tiap detik
+    // (sama alasannya dengan kenapa halaman riwayat/kalender/setting juga tidak disentuh di sini).
+    if (halaman === "utama" && !sedangEditAbsenMasuk) {
       render();
     }
     laporkanStatusKeTray();
