@@ -1,0 +1,35 @@
+name: Build Absen Pribadi Tray App (Windows)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tray-app/**"
+      - ".github/workflows/build-tray-app.yml"
+  workflow_dispatch: {}
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: tray-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build exe
+        run: pyinstaller --onefile --windowed --name AbsenPribadi run.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AbsenPribadi-windows
+          path: tray-app/dist/AbsenPribadi.exe

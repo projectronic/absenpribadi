@@ -356,6 +356,34 @@
   .legend-dot-absen {
     background: var(--green-text);
   }
+  .mode-toggle {
+    display: flex;
+    border: 1px solid var(--slate-200);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .mode-toggle button {
+    flex: 1;
+    border-radius: 0;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--card);
+    color: var(--slate-500);
+  }
+  .mode-toggle button.active {
+    background: var(--dark);
+    color: white;
+  }
+  .mode-toggle button:hover { background: var(--slate-100); }
+  .mode-toggle button.active:hover { background: var(--dark); }
+  .mode-desc {
+    font-size: 12px;
+    color: var(--slate-500);
+    margin: 0 0 14px;
+    line-height: 1.5;
+  }
   .setting-intro {
     font-size: 12px;
     color: var(--slate-500);
@@ -605,6 +633,24 @@
 
   let jadwalKerja = { ...JADWAL_DEFAULT };
 
+  // ===== Mode Perhitungan Target Jam Pulang =====
+  // "pulang": target jam pulang selalu jam pulang tetap dari jadwal hari itu (perilaku lama).
+  // "kerja" : target jam pulang = jam absen masuk (aktual) + total durasi kerja (termasuk istirahat).
+  //           Kalau absen lebih awal dari jam masuk terjadwal, target TIDAK dimajukan — tetap
+  //           pakai jam pulang normal (supaya datang lebih pagi tidak membuat pulang lebih cepat).
+  const MODE_KEY = "absen_mode_perhitungan";
+  const MODE_DEFAULT = "pulang";
+  let modePerhitungan = MODE_DEFAULT;
+
+  function getModePerhitungan() {
+    const v = localStorage.getItem(MODE_KEY);
+    return v === "kerja" ? "kerja" : "pulang";
+  }
+  function setModePerhitungan(mode) {
+    localStorage.setItem(MODE_KEY, mode);
+    modePerhitungan = mode;
+  }
+
   function getJadwalKerja() {
     try {
       const v = localStorage.getItem(JADWAL_KEY);
@@ -655,6 +701,22 @@
       hasil.setDate(hasil.getDate() + 1);
     }
     return hasil;
+  }
+  // Target jam pulang untuk mode "kerja": jam absen masuk aktual + total durasi kerja
+  // (termasuk istirahat). Kalau absen lebih awal dari jam masuk terjadwal, jangan majukan
+  // target — pakai jam pulang normal (jamPulangTarget) supaya datang pagi-pagi sekali tidak
+  // membuat pulang jadi lebih cepat dari jam pulang standar.
+  function jamPulangTargetKerja(absenMasuk, jadwal) {
+    const [h, m] = jadwal.masuk.split(":").map(Number);
+    const masukTerjadwal = new Date(absenMasuk.getFullYear(), absenMasuk.getMonth(), absenMasuk.getDate(), h, m, 0, 0);
+    if (absenMasuk.getTime() < masukTerjadwal.getTime()) {
+      return jamPulangTarget(absenMasuk, jadwal);
+    }
+    return new Date(absenMasuk.getTime() + totalJamJadwal(jadwal));
+  }
+  // Pilih cara menghitung target jam pulang sesuai mode yang aktif (lihat MODE_KEY di atas).
+  function hitungTargetPulang(absenMasuk, jadwal, mode) {
+    return mode === "kerja" ? jamPulangTargetKerja(absenMasuk, jadwal) : jamPulangTarget(absenMasuk, jadwal);
   }
   function fmtJadwalSingkat(jadwal) {
     if (jadwal.libur) return "Libur";
@@ -973,7 +1035,7 @@
 
     const jadwalHariIni = getJadwalHari(absenMasuk);
     const adaTarget = !jadwalHariIni.libur;
-    const jamPulang = adaTarget ? jamPulangTarget(absenMasuk, jadwalHariIni) : null;
+    const jamPulang = adaTarget ? hitungTargetPulang(absenMasuk, jadwalHariIni, modePerhitungan) : null;
     const sudahBoleh = adaTarget ? now >= jamPulang : false;
     const sisaMs = adaTarget ? jamPulang.getTime() - now.getTime() : null;
     const durasiBerjalanMs = now.getTime() - absenMasuk.getTime();
@@ -1010,7 +1072,7 @@
     }
 
     const noteHtml = adaTarget
-      ? `<p class="note">Jadwal hari ini: ${fmtJadwalSingkat(jadwalHariIni)}</p>`
+      ? `<p class="note">Jadwal hari ini: ${fmtJadwalSingkat(jadwalHariIni)}${modePerhitungan === "kerja" ? " &middot; mode: waktu kerja" : ""}</p>`
       : `<p class="note">Hari ini tidak ada jadwal kerja (libur) &mdash; absen tetap tercatat tanpa target jam pulang.</p>`;
 
     body.innerHTML = `
@@ -1336,7 +1398,19 @@
   function renderSetting(body) {
     // Bekerja di atas salinan sementara dulu — baru disimpan permanen saat tombol Simpan ditekan.
     if (!window._settingDraft) window._settingDraft = JSON.parse(JSON.stringify(jadwalKerja));
+    if (!window._modeDraft) window._modeDraft = modePerhitungan;
     const draft = window._settingDraft;
+    const modeDraft = window._modeDraft;
+
+    const modeToggleHtml = `
+      <div class="mode-toggle">
+        <button type="button" class="${modeDraft === "pulang" ? "active" : ""}" data-mode="pulang">Waktu Pulang</button>
+        <button type="button" class="${modeDraft === "kerja" ? "active" : ""}" data-mode="kerja">Waktu Kerja</button>
+      </div>
+      <p class="mode-desc">${modeDraft === "kerja"
+        ? "Target jam pulang dihitung dari jam absen masuk + total durasi kerja (termasuk istirahat). Kalau absen lebih awal dari jam masuk terjadwal, target tetap jam pulang normal."
+        : "Target jam pulang selalu mengikuti jam pulang yang ditentukan di jadwal hari itu, apapun jam absen masuknya."}</p>
+    `;
 
     const barisHtml = HARI_LIST.map(hari => {
       const j = draft[hari];
@@ -1378,6 +1452,7 @@
           <h2>Setting Jadwal Kerja</h2>
         </div>
         <div class="riwayat-list">
+          ${modeToggleHtml}
           <p class="setting-intro">Atur jam masuk, istirahat, dan pulang untuk setiap hari. Aktifkan "Libur" untuk hari yang tidak ada jadwal kerja (misalnya Sabtu/Minggu).</p>
           ${barisHtml}
           <div class="riwayat-actions" style="margin-top:14px;">
@@ -1390,9 +1465,17 @@
 
     document.getElementById("btnBackSetting").onclick = () => {
       window._settingDraft = null; // buang draft yang belum disimpan
+      window._modeDraft = null;
       halaman = "utama";
       render();
     };
+
+    body.querySelectorAll("[data-mode]").forEach(btn => {
+      btn.onclick = () => {
+        window._modeDraft = btn.getAttribute("data-mode");
+        render();
+      };
+    });
 
     body.querySelectorAll('[data-field="libur"]').forEach(input => {
       input.onchange = () => {
@@ -1413,7 +1496,9 @@
 
     document.getElementById("btnSimpanSetting").onclick = () => {
       setJadwalKerja(draft);
+      setModePerhitungan(modeDraft);
       window._settingDraft = null;
+      window._modeDraft = null;
       halaman = "utama";
       render();
     };
@@ -1423,8 +1508,9 @@
     };
   }
 
-  // Muat jadwal kerja tersimpan (jika ada) sebelum render pertama.
+  // Muat jadwal kerja & mode perhitungan tersimpan (jika ada) sebelum render pertama.
   jadwalKerja = getJadwalKerja();
+  modePerhitungan = getModePerhitungan();
 
   // Ikon header (kalender & setting) statis di HTML, jadi listener cukup dipasang sekali.
   document.getElementById("btnIconKalender").onclick = () => {
