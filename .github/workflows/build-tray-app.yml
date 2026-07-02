@@ -42,8 +42,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # BUKAN --prerelease: endpoint /releases/latest (dipakai link download permanen
+          # di README) secara khusus mengabaikan release yang ditandai prerelease/draft,
+          # jadi kalau ditandai prerelease link publiknya akan selalu 404.
           gh release delete latest --yes --cleanup-tag || true
           gh release create latest dist/AbsenPribadi.exe \
             --title "AbsenPribadi (build terbaru)" \
-            --notes "Build otomatis dari commit ${{ github.sha }}." \
-            --prerelease
+            --notes "Build otomatis dari commit ${{ github.sha }}."
