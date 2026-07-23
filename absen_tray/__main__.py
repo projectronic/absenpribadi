@@ -116,7 +116,9 @@ class AbsenTrayApp:
         # ke lokasi exe (bermasalah kalau exe di folder read-only atau dipindah-pindah).
         webview_data_dir = self._data_dir / "WebView2"
         webview_data_dir.mkdir(parents=True, exist_ok=True)
-        webview.start(storage_path=str(webview_data_dir))
+        # private_mode default pywebview adalah True (mode "incognito" — localStorage/cookie
+        # tidak pernah disimpan ke disk sama sekali), jadi storage_path saja tidak cukup.
+        webview.start(storage_path=str(webview_data_dir), private_mode=False)
 
 
 def main() -> None:

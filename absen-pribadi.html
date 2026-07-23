@@ -502,7 +502,9 @@
     border-radius: 6px;
     font-size: 12px;
     font-family: inherit;
-    color: hsl(var(--foreground));
+    /* Background native input time selalu putih (bukan hsl(--card)), jadi warna teks
+       dikunci hitam supaya tetap kebaca di tema gelap. */
+    color: #000000;
   }
   .btn-back {
     width: auto;
@@ -762,7 +764,8 @@
     border-radius: 6px;
     font-size: 13px;
     font-family: inherit;
-    color: hsl(var(--foreground));
+    /* Background native input number selalu putih, jadi warna teks dikunci hitam. */
+    color: #000000;
   }
 </style>
 </head>
