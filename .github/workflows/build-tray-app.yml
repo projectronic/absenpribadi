@@ -8,6 +8,7 @@ on:
       - "run.py"
       - "requirements.txt"
       - "absen-pribadi.html"
+      - "version_info.txt"
       - ".github/workflows/build-tray-app.yml"
   workflow_dispatch: {}
 
@@ -30,7 +31,9 @@ jobs:
           pip install pyinstaller
 
       - name: Build exe
-        run: pyinstaller --onefile --windowed --name AbsenPribadi --add-data "absen-pribadi.html;." run.py
+        # --version-file menambahkan metadata (nama produk, publisher, versi) ke exe —
+        # exe tanpa metadata ini salah satu sinyal yang bikin SmartScreen curiga.
+        run: pyinstaller --onefile --windowed --name AbsenPribadi --add-data "absen-pribadi.html;." --version-file version_info.txt run.py
 
       - uses: actions/upload-artifact@v4
         with:
