@@ -8,7 +8,14 @@ Dibuat awalnya untuk kebutuhan pribadi, lalu dibuka sebagai open source karena m
 
 ## Cara Pakai
 
-1. Download `AbsenPribadi.exe` dari **[Releases](https://github.com/projectronic/absenpribadi/releases/latest/download/AbsenPribadi.exe)** (build terbaru, otomatis ter-update tiap ada perubahan di branch `main`).
+Ada dua pilihan build, silakan pilih salah satu:
+
+- **[AbsenPribadi.exe](https://github.com/projectronic/absenpribadi/releases/latest/download/AbsenPribadi.exe)** — versi **onefile**, satu file exe langsung jalan. Paling praktis, tapi karena self-extract ke folder temp tiap kali dibuka, polanya mirip cara kerja dropper malware di mata heuristik Windows — jadi lebih sering kena blokir Windows Defender/SmartScreen ("this file contains a virus or potentially unwanted software"), walau ini **false positive**.
+- **[AbsenPribadi-onedir.zip](https://github.com/projectronic/absenpribadi/releases/latest/download/AbsenPribadi-onedir.zip)** — versi **onedir**. Extract dulu zip-nya ke folder pilihan Anda, lalu jalankan `AbsenPribadi.exe` yang ada di dalam folder hasil extract. Sedikit lebih ribet (butuh extract dulu, dan foldernya sekitar puluhan MB berisi banyak file pendukung), tapi jauh lebih jarang kena false-positive antivirus karena tidak self-extract saat jalan.
+
+Keduanya adalah build yang sama persis dari kode yang sama, cuma beda cara PyInstaller mengemasnya — hasil dan fungsinya identik. Kalau `AbsenPribadi.exe` diblokir dan Anda tidak yakin cara bypass-nya, pakai versi `AbsenPribadi-onedir.zip` saja.
+
+1. Download salah satu versi di atas (build terbaru, otomatis ter-update tiap ada perubahan di branch `main`).
 2. Jalankan — ikonnya muncul di tray (dekat jam, pojok kanan bawah taskbar).
 3. Klik ikon tray untuk buka popup. Tekan **Absen Masuk** saat tiba, dan **Absen Pulang** saat pulang.
 4. Klik kanan ikon tray untuk menu cepat (Buka/Tutup, Keluar).
@@ -80,18 +87,25 @@ python -m absen_tray
 
 Butuh Edge WebView2 runtime — sudah bawaan Windows 10/11, tidak perlu install manual.
 
-## Build Jadi Satu File Executable
+## Build Jadi Executable
+
+Bisa dipaket jadi dua bentuk — **onefile** (satu file exe) atau **onedir** (folder berisi exe + file pendukung, lebih jarang kena false-positive antivirus karena tidak self-extract saat jalan, lihat [Cara Pakai](#cara-pakai)):
 
 ```bash
 pip install pyinstaller
-pyinstaller --onefile --windowed --name AbsenPribadi --add-data "absen-pribadi.html;." run.py
+
+# onefile -> dist/AbsenPribadi.exe
+pyinstaller --onefile --windowed --name AbsenPribadi --add-data "absen-pribadi.html;." --version-file version_info.txt run.py
+
+# onedir -> dist/AbsenPribadi/AbsenPribadi.exe (+ file pendukung di folder yang sama)
+pyinstaller --onedir --windowed --name AbsenPribadi --add-data "absen-pribadi.html;." --version-file version_info.txt run.py
 ```
 
-(Di Linux/macOS, pemisah `--add-data` pakai `:` bukan `;`.) Hasilnya ada di `dist/AbsenPribadi.exe`.
+(Di Linux/macOS, pemisah `--add-data` pakai `:` bukan `;`.)
 
 ### Build otomatis lewat GitHub Actions
 
-Tidak perlu install Python di Windows sama sekali — workflow [`.github/workflows/build-tray-app.yml`](.github/workflows/build-tray-app.yml) build `.exe` otomatis di runner `windows-latest` tiap ada push ke `main`, lalu publish ulang sebagai **GitHub Release** bertag `latest` (link download permanen: `.../releases/latest/download/AbsenPribadi.exe`). Build mentah (belum di-publish sebagai release) juga tetap bisa diambil lewat tab **Actions** kalau perlu.
+Tidak perlu install Python di Windows sama sekali — workflow [`.github/workflows/build-tray-app.yml`](.github/workflows/build-tray-app.yml) build kedua versi (onefile & onedir) otomatis di runner `windows-latest` tiap ada push ke `main`, lalu publish ulang sebagai **GitHub Release** bertag `latest` (link download permanen: `.../releases/latest/download/AbsenPribadi.exe` dan `.../releases/latest/download/AbsenPribadi-onedir.zip`). Build mentah (belum di-publish sebagai release) juga tetap bisa diambil lewat tab **Actions** kalau perlu.
 
 ## Mengembangkan / Berkontribusi
 

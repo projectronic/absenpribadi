@@ -30,15 +30,30 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: Build exe
+      - name: Build exe (onefile)
         # --version-file menambahkan metadata (nama produk, publisher, versi) ke exe —
         # exe tanpa metadata ini salah satu sinyal yang bikin SmartScreen curiga.
-        run: pyinstaller --onefile --windowed --name AbsenPribadi --add-data "absen-pribadi.html;." --version-file version_info.txt run.py
+        run: pyinstaller --onefile --windowed --name AbsenPribadi --add-data "absen-pribadi.html;." --version-file version_info.txt --distpath dist/onefile --workpath build/onefile run.py
+
+      - name: Build exe (onedir)
+        # Onedir tidak self-extract ke temp saat jalan (beda dari onefile), jadi pola
+        # perilakunya tidak semirip dropper malware di mata heuristik SmartScreen/Defender
+        # — alternatif buat yang exe onefile-nya kena blokir "virus or unwanted software".
+        run: pyinstaller --onedir --windowed --name AbsenPribadi --add-data "absen-pribadi.html;." --version-file version_info.txt --distpath dist/onedir --workpath build/onedir run.py
+
+      - name: Zip hasil onedir
+        shell: pwsh
+        run: Compress-Archive -Path dist/onedir/AbsenPribadi/* -DestinationPath dist/onedir/AbsenPribadi-onedir.zip
 
       - uses: actions/upload-artifact@v4
         with:
-          name: AbsenPribadi-windows
-          path: dist/AbsenPribadi.exe
+          name: AbsenPribadi-windows-onefile
+          path: dist/onefile/AbsenPribadi.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AbsenPribadi-windows-onedir
+          path: dist/onedir/AbsenPribadi-onedir.zip
 
       - name: Publish/replace GitHub Release "latest"
         shell: bash
@@ -49,6 +64,9 @@ jobs:
           # di README) secara khusus mengabaikan release yang ditandai prerelease/draft,
           # jadi kalau ditandai prerelease link publiknya akan selalu 404.
           gh release delete latest --yes --cleanup-tag || true
-          gh release create latest dist/AbsenPribadi.exe \
+          gh release create latest dist/onefile/AbsenPribadi.exe dist/onedir/AbsenPribadi-onedir.zip \
             --title "AbsenPribadi (build terbaru)" \
-            --notes "Build otomatis dari commit ${{ github.sha }}."
+            --notes "Build otomatis dari commit ${{ github.sha }}.
+
+          - **AbsenPribadi.exe** — versi onefile, satu file exe langsung jalan (self-extract ke temp tiap kali dibuka). Paling praktis, tapi lebih sering kena peringatan SmartScreen/Defender.
+          - **AbsenPribadi-onedir.zip** — versi onedir, extract dulu ke folder lalu jalankan AbsenPribadi.exe di dalamnya. Lebih jarang kena false-positive antivirus, cocok kalau onefile diblokir."
